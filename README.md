@@ -28,11 +28,11 @@ To run the evaluation data in our blog, download the following rosbags:
 [ground truth](https://drive.google.com/drive/folders/1qGDTkIi9izoh6WXzFa-ODQmevd7g-kpr?usp=drive_link) (ROS2)
 
 ```
-export BAG_PATH=/path/to/hamilton_data.bag
+export BAG_PATH=/path/to/KITTI/data
 export RAFT=/path/to/dynamic-object-detection/RAFT/
-python3 dynamic_object_detection/offline.py -p config/hamilton.yaml
+python3 dynamic_object_detection/offline_KITTI.py -p config/kitti.yaml --base /path/to/KITTI/data --seq 0003
 ```
-Edit `config/hamilton.yaml` to experiment with different parameters.
+Edit `config/kitti.yaml` to experiment with different parameters.
 
 *Note*: All operations assume undistorted images. Our data is already undistorted.
 
