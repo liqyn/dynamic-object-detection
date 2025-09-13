@@ -9,7 +9,6 @@ import open3d as o3d
 
 PLT_DPI = 100
 
-
 class OpticalFlowVisualizer:
     def __init__(self, viz_params, output, fps):
         self.params = viz_params
@@ -22,7 +21,8 @@ class OpticalFlowVisualizer:
 
     def write_batch_frames(self, image, depth, dynamic_mask, orig_dynamic_masks, raft_flow, geom_flow, residual):
         if not self.params.viz_video: return
-
+        
+        print(f"\nWriting frames...\n")
         for frame in range(len(image)):
             frame_canvas = np.zeros((self.params.vid_dims[1], self.params.vid_dims[0], 3), dtype=np.uint8)
 

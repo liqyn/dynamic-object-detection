@@ -1,0 +1,61 @@
+raft_model: raft-kitti
+
+use_3d: False
+
+# device/batch size for raft & geometric optical flow
+device: cuda
+batch_size: 24
+
+original_fps: 10
+skip_frames: 1
+
+output: 'out/raft/kitti_kitti'
+
+raft:
+  path: ${RAFT}/core/
+  model: ${RAFT}/models/${RAFT_MODEL}.pth
+  iters: 12
+
+time:
+  relative: true
+  t0: 0
+  tf: -1   # -1 means use until end of sequence
+
+# Image data (KITTI)
+img_data:
+  dataset: kitti
+  base: /home/jrached/cv_project_code/project/data/KITTI_tracking/unzipped
+  seq: 0003
+
+# Depth data (KITTI stereo)
+depth_data:
+  dataset: kitti
+  base: /home/jrached/cv_project_code/project/data/KITTI_tracking/unzipped
+  seq: 0003
+  depth_scale: 1.0
+  max_depth: 60.0   # KITTI depth values from stereo are in meters
+
+pose_data:
+  dataset: kitti
+  base: /home/jrached/cv_project_code/project/data/KITTI_tracking/unzipped
+  seq: 0003
+
+tracking:
+  # if residual magnitude is greater than (min_vel_threshold + depth * vel_threshold_gain) * 1 / fps, 
+  # then that point is considered dynamic
+  # for 2D:
+  # approximate 3d residual magnitude = depth * K^-1 * [delta_u, delta_v, 0]
+  min_vel_threshold: 5.0 # 0.4
+  vel_threshold_gain: 0.0 #0.125
+  post_processing: [['open', 9], ['close', 13]]
+  min_3d_std_dev: 0.05
+  max_3d_std_dev: 0.5
+  max_merge_dist: 1.0
+
+viz:
+  viz_video: True
+  viz_dynamic_object_masks: True
+  vid_dims: [1240, 368] #[368, 1240] #[1280, 960]
+  viz_flag_names: ['image', 'depth', 'dynamic mask', 'raft flow', 'geometric flow', 'residual', 'orig dynamic mask']
+  viz_flags: [[0, 1, 3, 2], [4, 5, 6, 2]]
+  viz_max_residual_magnitude: 0.75 #0.75
