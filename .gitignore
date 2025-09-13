@@ -181,3 +181,6 @@ config.sh
 out/
 
 other/
+
+# Virtual environment
+mot_venv/
