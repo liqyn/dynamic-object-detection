@@ -1,6 +1,6 @@
 import sys
 import torch
-from params import RaftParams
+from params_KITTI import RaftParams
 import torchvision.transforms as T
 
 class RaftWrapper:
