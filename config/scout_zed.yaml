@@ -1,0 +1,88 @@
+raft_model: raft-sintel
+
+use_3d: True
+
+# device/batch size for raft & geometric optical flow
+device: cuda
+batch_size: 24
+
+original_fps: 30
+# run once every `skip_frames` frames
+skip_frames: 2
+
+output: 'out/scout_zed_2d'
+
+raft:
+  path: ${RAFT}/core/
+  model: ${RAFT}/models/${RAFT_MODEL}.pth
+  iters: 12
+
+time:
+  relative: true
+  t0: 10
+  tf: 70
+
+img_data:
+  path: ${BAG_PATH}
+  topic: /pascal/pascal_zed/rgb/image_rect_color/compressed
+  camera_info_topic: /pascal/pascal_zed/rgb/camera_info
+  compressed: True
+  
+depth_data:
+  path: ${BAG_PATH}
+  topic: /pascal/pascal_zed/depth/depth_registered
+  camera_info_topic: /pascal/pascal_zed/depth/camera_info
+  compressed: False
+
+  depth_scale: 1.0
+  max_depth: 6.0
+
+  # d, sigmalColor, sigmalSpace. Delete or set to null to disable.
+  # bilateral_smooth_depth: [10, 100, 5] # in mm. (before scaling by 1000.0)
+
+pose_data:
+  type: bag
+  path: ${BAG_PATH}
+  topic: /pascal/dlio/odom_node/odom
+  time_tol: 2.0
+
+  T_odom_camera:
+    input_type: "tf"
+    # string: "T_FLURDF"
+    parent: pascal/base_link
+    child: pascal_zed_left_camera_optical_frame
+
+tracking:
+  # for 3D:
+  # if residual magnitude is greater than (min_vel_threshold + depth * vel_threshold_gain) * 1 / fps, 
+  # then that point is considered dynamic
+  # for 2D:
+  # approximate 3d residual magnitude = depth * K^-1 * [delta_u, delta_v, 0]
+  min_vel_threshold: 0.4
+  vel_threshold_gain: 0.125
+
+  # supports open, close, dilate, erode. second number is kernel size.
+  post_processing: [['open', 9], ['close', 13]]
+
+  # max axial std. deviation constraint for dynamic objects
+  min_3d_std_dev: 0.05
+  max_3d_std_dev: 0.5
+
+  # maximum chamfer distance for a projected dynamic object & a newly detected
+  # dynamic object to be considered for GNN association
+  max_merge_dist: 1.0
+
+  # minimum number of consecutive frames a dynamic object must be detected in 
+  # for it to be considered (1 by default)
+  # min_consecutive_frames: 2
+
+viz:
+  viz_video: True
+  viz_dynamic_object_masks: True
+  vid_dims: [1280, 960]
+  viz_flag_names: ['image', 'depth', 'dynamic mask', 'raft flow', 'geometric flow', 'residual', 'orig dynamic mask']
+  # must be 2D: each entry i means viz_flag_names[i] will be in the video at the location of i in the grid
+  # viz_flags: [[0, 1], [3, 4]]
+  viz_flags: [[0, 1, 3], [2, 5, 0]]
+  # viz_flags: [[0, 1, 2], [3, 4, 5]]
+  viz_max_residual_magnitude: 0.75

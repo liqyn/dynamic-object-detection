@@ -72,13 +72,13 @@ def preprocess_depth(depth, depth_params):
     return depth
 
 def compute_relative_poses(poses):
-    pose0 = poses[:-1]                                                                                  # (N, 4, 4)
-    pose1_inv = torch.stack([torch.linalg.inv(pose) for pose in poses[1:]], dim=0)                      # (N, 4, 4)
+    pose0_inv = torch.stack([torch.linalg.inv(pose) for pose in poses[:-1]], dim=0)                         # (N, 4, 4)
+    pose1 = poses[1:]
 
-    # T_1_0 = T_w_1^-1 @ T_w_0: transform from frame 0 to frame 1
-    T_1_0 = pose1_inv @ pose0                                                                           # (N, 4, 4)      
-
-    return T_1_0
+    # T_0_1 = T_w_0^-1 @ T_w_1: transform from frame 1 to frame 0  
+    T_0_1 = pose0_inv @ pose1                                                                               # (N-1, 4, 4)
+    
+    return T_0_1
 
 def remove_nan_points(points):
     return points[~np.isnan(points).any(axis=1)]

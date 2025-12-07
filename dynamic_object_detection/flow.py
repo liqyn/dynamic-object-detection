@@ -14,36 +14,36 @@ class GeometricOpticalFlow:
         self.pixel_coords, self.pixel_coords_flattened = self.compute_pixel_coords()                        # (H, W, 2), (H*W, 2)
         self.norm_cam_coords_h = self.get_norm_cam_coords_h(self.pixel_coords_flattened).view(1, -1, 3)     # (1, H*W, 3)
 
-    def compute_flow(self, raft_flow, depth_images, T_1_0, use_3d=False):
+    def compute_flow(self, raft_flow, depth_images, T_0_1, use_3d=False):
         """
         raft_flow: (N, H, W, 2)
         depth_images: (N+1, H, W)
-        T_1_0: (N, 4, 4)
+        T_0_1: (N, 4, 4)
 
         returns:
             coords_3d: (N, H*W, 3)
             resid_vel: (N, H, W)
         """
 
-        raft_coords_3d_1 = self.raft_unproject(raft_flow, depth_images[1:])                                 # (N, H*W, 3), (N, H, W)
+        raft_coords_3d_1 = self.raft_unproject(raft_flow, depth_images[:-1])                                # (N, H*W, 3), (N, H, W)
 
         if use_3d: 
-            coords_3d, residual = self.compute_residual_3d_flow(raft_coords_3d_1, depth_images[:-1], T_1_0)
+            coords_3d, residual = self.compute_residual_3d_flow(raft_coords_3d_1, depth_images[1:], T_0_1)
             geom_flow = None
-        else: coords_3d, residual, geom_flow = self.compute_residual_2d_flow(raft_flow, depth_images[:-1], T_1_0)
+        else: coords_3d, residual, geom_flow = self.compute_residual_2d_flow(raft_flow, depth_images[1:], T_0_1)
 
         return residual, coords_3d, raft_coords_3d_1, geom_flow
 
 
     # --------------- For 2D flow --------------- #
 
-    def compute_residual_2d_flow(self, raft_flow, depth_images, T_1_0):
+    def compute_residual_2d_flow(self, raft_flow, depth_images, T_0_1):
         """
         raft_flow: (N, H, W, 2)
-        depth_images: (N, H, W) (starts at index 0 of original depth images)
-        T_1_0: (N, 4, 4)
+        depth_images: (N, H, W) (starts at index 1 of original depth images)
+        T_0_1: (N, 4, 4)
         """
-        coords_3d, gflow = self.compute_optical_flow_batch(depth_images, T_1_0)                             # (N, H, W, 2)
+        coords_3d, gflow = self.compute_optical_flow_batch(depth_images, T_0_1)                             # (N, H, W, 2)
 
         resid_flow = raft_flow - gflow                                                                      # (N, H, W, 2)
 
@@ -54,25 +54,25 @@ class GeometricOpticalFlow:
         resid_vel = depth_images * torch.linalg.norm(resid_flow, dim=-1)                                    # (N, H, W)
 
         # not time normalized, done in tracker.py
-        return coords_3d, resid_vel, gflow                                                                         # (N, H*W, 3), (N, H, W)                   
+        return coords_3d, resid_vel, gflow                                                                  # (N, H*W, 3), (N, H, W), (N, H, W, 2)                   
         
 
     @torch.no_grad()
-    def compute_optical_flow_batch(self, depth_images, T_1_0):
+    def compute_optical_flow_batch(self, depth_images, T_0_1):
         """
         depth_images: (N, H, W)
-        T_1_0: (N, 4, 4)
+        T_0_1: (N, 4, 4)
         """
         N = len(depth_images)
-        assert(N == len(T_1_0))
+        assert(N == len(T_0_1))
 
         invalid_mask = depth_images <= 0                                                                    # (N, H, W)
 
         coords_3d = self.unproject(depth_images)                                                            # (N, H*W, 3)
   
-        coords_3d_1 = self.transform_next_frame(coords_3d, T_1_0)                                           # (N, H*W, 3)
+        coords_3d_1 = self.transform_prev_frame(coords_3d, T_0_1)                                           # (N, H*W, 3)
 
-        # project 3d coordinates in subsequent frame to original image frame
+        # project 3d coordinates in prev frame to original image frame
         projected_pixel_coords_flattened = self.project_points(coords_3d_1)                                 # (N, H*W, 2)
 
         # compute flow for each pixel in original frames
@@ -88,26 +88,26 @@ class GeometricOpticalFlow:
     # --------------- For 3D flow --------------- #
 
     @torch.no_grad()
-    def compute_residual_3d_flow(self, raft_coords_3d_1, depth_images, T_1_0):
+    def compute_residual_3d_flow(self, raft_coords_3d_1, depth_images, T_0_1):
         """
-        raft_flow: (N, H, W, 2)
-        depth_images: (N, H, W) (starts at index 0 of original depth images)
+        raft_coords_3d_1: (N, H, W, 3)
+        depth_images: (N, H, W) (starts at index 1 of original depth images)
         T_1_0: (N, 4, 4)
         """
         N = len(raft_coords_3d_1)
-        assert(N == len(depth_images) == len(T_1_0))
+        assert(N == len(depth_images) == len(T_0_1))
 
-        coords_3d, geometric_coords_3d_1 = self.unproject_and_transform(depth_images, T_1_0)                # (N, H*W, 3) 
+        coords_3d, geometric_coords_3d_1 = self.unproject_and_transform(depth_images, T_0_1)            # (N, H*W, 3) 
         
         residual = (raft_coords_3d_1 - geometric_coords_3d_1).view(N, self.H, self.W, 3)                    # (N, H, W, 3)
 
         return coords_3d, torch.linalg.norm(residual, dim=-1)                                               # (N, H*W, 3), (N, H, W)
 
     @torch.no_grad()
-    def raft_unproject(self, raft_flow, subsq_depth_images):
+    def raft_unproject(self, raft_flow, prev_depth_images):
         """
         raft_flow: (N, H, W, 2)
-        subsq_depth_images: (N, H, W) (starts at index 1 of original depth images)
+        prev_depth_images: (N, H, W) (starts at index 0 of original depth images)
         """
         N = len(raft_flow)
         pixel_coords_after_flow_raw = raft_flow + self.pixel_coords[None, :]                                # (N, H, W, 2) + (1, H, W, 2) = (N, H, W, 2)
@@ -120,28 +120,28 @@ class GeometricOpticalFlow:
         flow_y = pixel_coords_after_flow[..., 1].clamp(0, self.H - 1)                                       # (N, H, W)
         batch_indices = torch.arange(N, dtype=torch.int, device=self.device).view(-1, 1, 1).expand(-1, self.H, self.W)                   # (N, H, W)
 
-        depths_after_flow = subsq_depth_images[batch_indices, flow_y, flow_x]                               # (N, H, W)
+        depths_after_flow = prev_depth_images[batch_indices, flow_y, flow_x]                                # (N, H, W)
         invalid_mask = invalid_mask | (depths_after_flow <= 0)                                              # (N, H, W)
         depths_after_flow_flattened = depths_after_flow.view(N, -1, 1)                                      # (N, H*W, 1)
 
         pixel_coords_after_flow_flattened = pixel_coords_after_flow_raw.reshape(-1, 2)                      # (N*H*W, 2) - raft_flow is non-contiguous due to permute
 
-        new_norm_cam_coords_h = self.get_norm_cam_coords_h(pixel_coords_after_flow_flattened).view(N, -1, 3)                             # (N, H*W, 3)
+        prev_norm_cam_coords_h = self.get_norm_cam_coords_h(pixel_coords_after_flow_flattened).view(N, -1, 3)                            # (N, H*W, 3)
         
-        raft_coords_3d_1 = new_norm_cam_coords_h * depths_after_flow_flattened                              # (N, H*W, 3) * (N, H*W, 1) -> (N, H*W, 3)
+        raft_coords_3d_1 = prev_norm_cam_coords_h * depths_after_flow_flattened                             # (N, H*W, 3) * (N, H*W, 1) -> (N, H*W, 3)
 
         raft_coords_3d_1[invalid_mask.view(N, -1)] = torch.nan
 
         return raft_coords_3d_1                                                                             # (N, H*W, 3)
         
     @torch.no_grad()
-    def unproject_and_transform(self, depth_images, T_1_0):
+    def unproject_and_transform(self, depth_images, T_0_1):
         """
         depth_images: (N, H, W)
-        T_1_0: (N, 4, 4)
+        T_0_1: (N, 4, 4)
         """ 
         coords_3d = self.unproject(depth_images)                                                            # (N, H*W, 3)
-        coords_3d_1 = self.transform_next_frame(coords_3d, T_1_0)                                           # (N, H*W, 3)
+        coords_3d_1 = self.transform_prev_frame(coords_3d, T_0_1)                                           # (N, H*W, 3)
         return coords_3d, coords_3d_1                                                                       # (N, H*W, 3) x 2
 
     # --------------- Shared functions --------------- #
@@ -184,13 +184,13 @@ class GeometricOpticalFlow:
         pixel_coords = pixel_coords.permute(0, 2, 1)                                                        # (N, H*W, 3)
         return pixel_coords[..., :2]                                                                        # (N, H*W, 2)
     
-    def transform_next_frame(self, coords_3d, T_1_0):
+    def transform_prev_frame(self, coords_3d, T_0_1):
         """
         coords_3d: (N, H*W, 3)
-        T_1_0: (N, 4, 4)
+        T_0_1: (N, 4, 4)
         """
         coords_3d_h = self.concat_last_axis(coords_3d)                                                      # (N, H*W, 4)         
-        coords_3d_h_1 = T_1_0 @ coords_3d_h.permute(0, 2, 1)                                                # (N, 4, 4) @ (N, 4, H*W) =     (N, 4, H*W)
+        coords_3d_h_1 = T_0_1 @ coords_3d_h.permute(0, 2, 1)                                                # (N, 4, 4) @ (N, 4, H*W) =     (N, 4, H*W)
         return (coords_3d_h_1.permute(0, 2, 1))[..., :3]                                                    # (N, 4, H*W) -> (N, H*W, 4) -> (N, H*W, 3)      
 
     def concat_last_axis(self, tensor, ones=True):

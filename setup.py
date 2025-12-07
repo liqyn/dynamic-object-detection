@@ -7,7 +7,7 @@ setup(
     install_requires=[
         "numpy<2",
         "opencv-python",
-        "torch==1.6.0",
+        "torch>=2.8.0",
         "torchvision",
         "matplotlib",
         "tensorboard",

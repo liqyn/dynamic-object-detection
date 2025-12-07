@@ -50,7 +50,7 @@ if __name__ == '__main__':
     imgs = np.stack([img_data.img(t) for t in times], axis=0) # (N, H, W, 3)
     depth_imgs = np.stack([preprocess_depth(depth_data.img(t), params.depth_data_params) for t in times], axis=0) # (N, H, W)
     cam_poses = np.stack([cam_pose_data.pose(t) for t in times], axis=0)
-    T_1_0 = compute_relative_poses(torch.tensor(cam_poses, dtype=torch.float32, device=params.device)) # (N-1, 4, 4)
+    T_0_1 = compute_relative_poses(torch.tensor(cam_poses, dtype=torch.float32, device=params.device)) # (N-1, 4, 4)
 
     print(f'running algorithm on {N_frames} frames from t={times[0]} to t={times[-1]}')
 
@@ -63,30 +63,30 @@ if __name__ == '__main__':
     gof_flow = GeometricOpticalFlow(depth_data.camera_params, device=params.device)
     tracker = DynamicObjectTracker(params.tracking_params, depth_data.camera_params, effective_fps)
 
-    for index in tqdm(range(0, N_frames - 1, params.batch_size)):
+    for index in tqdm(range(1, N_frames, params.batch_size)):
 
         torch.cuda.empty_cache()
         gc.collect()
 
-        batch_end = min(index + params.batch_size, N_frames - 1)
+        batch_end = min(index + params.batch_size, N_frames)
 
         # print(f'processing frames {index} to {batch_end}')
 
-        batch_imgs_np = imgs[index:batch_end+1]
+        batch_imgs_np = imgs[index - 1:batch_end]
         batch_imgs = torch.tensor(batch_imgs_np, dtype=torch.float32, device=params.device) # (B+1 H W 3)
         batch_img0s = batch_imgs[:-1] # (B H W 3)
         batch_img1s = batch_imgs[1:] # (B H W 3)
-        batch_depth_imgs_np = depth_imgs[index:batch_end + 1]
+        batch_depth_imgs_np = depth_imgs[index - 1:batch_end]
         batch_depth_imgs = torch.tensor(batch_depth_imgs_np, dtype=torch.float32, device=params.device) # (B+1 H W)
-        batch_T_1_0 = T_1_0[index:batch_end]
+        batch_T_0_1 = T_0_1[index - 1:batch_end - 1] # (B 4 4)
 
         start_time = time.time()
 
         # print('computing raft optical flow...')
-        raft_flows = raft.run_raft_batch(batch_img0s, batch_img1s) # (B H W 2)
+        raft_flows = raft.run_raft_batch(batch_img1s, batch_img0s) # (B H W 2)
 
         # print('computing optical flow residual...')
-        residual, coords_3d, raft_coords_3d_1, geom_flows = gof_flow.compute_flow(raft_flows, batch_depth_imgs, batch_T_1_0, use_3d=params.use_3d) # (B H W), (B H W 3), (B H W 3)
+        residual, coords_3d, raft_coords_3d_1, geom_flows = gof_flow.compute_flow(raft_flows, batch_depth_imgs, batch_T_0_1, use_3d=params.use_3d) # (B H W), (B H W 3), (B H W 3), (B H W 2)/None
 
         # convert to numpy for tracking and visualization
         raft_flows = raft_flows.cpu().numpy()
@@ -98,8 +98,8 @@ if __name__ == '__main__':
         # print('running dynamic object tracker...')
         dynamic_masks, orig_dynamic_masks = tracker.run_tracker(
             residual, 
-            batch_imgs_np[:-1],
-            batch_depth_imgs_np[:-1],
+            batch_imgs_np[1:],
+            batch_depth_imgs_np[1:],
             coords_3d,
             raft_coords_3d_1,
             times=times[index:batch_end],
@@ -112,8 +112,8 @@ if __name__ == '__main__':
         if params.viz_params.viz_video:
             # print('writing video frames...')
             viz.write_batch_frames(
-                batch_imgs_np[:-1],
-                batch_depth_imgs_np[:-1],
+                batch_imgs_np[1:],
+                batch_depth_imgs_np[1:],
                 dynamic_masks,
                 orig_dynamic_masks,
                 raft_flows,
@@ -126,8 +126,8 @@ if __name__ == '__main__':
 
     out = {
         'objects': tracker.return_objects(),
-        'times': times[:-1], # last frame is not tracked
-        'poses': cam_poses,
+        'times': times[1:], # first frame is not tracked
+        'poses': cam_poses, # includes first frame
         'runtime': {
             'avg_batch_time': np.mean(runtimes),
             'avg_frame_time': np.mean(runtimes) / params.batch_size,

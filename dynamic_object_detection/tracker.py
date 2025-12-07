@@ -54,7 +54,7 @@ class DynamicObjectTracker:
             
             labeled_mask, num_features = label(dynamic_mask[frame], structure=[[0,1,0],[1,1,1],[0,1,0]])
 
-            new_objects = self.labeled_mask_to_objects(labeled_mask, num_features, coords_3d[frame], cam_poses[frame])
+            new_objects, new_object_cur_points = self.labeled_mask_to_objects(labeled_mask, num_features, coords_3d[frame], raft_coords_3d_1[frame], cam_poses[frame])
 
             associations = global_nearest_neighbor_dynamic_objects(
                 tracked_objects=self.tracked_objects, 
@@ -68,10 +68,7 @@ class DynamicObjectTracker:
             to_remove_ids = [obj.id for obj in self.tracked_objects.values() if obj.id not in associations.values()]
             self.remove_dynamic_objects(to_remove_ids)
 
-            for new_obj in new_objects:
-                next_frame_points = remove_nan_points(raft_coords_3d_1[frame][new_obj.mask])
-                if len(next_frame_points) == 0: next_frame_points = new_obj.points # backup: use old points
-
+            for new_obj, new_obj_cur_points in zip(new_objects, new_object_cur_points):
                 if new_obj.id in associations:
                     to_update_id = associations[new_obj.id]
                 else:
@@ -80,7 +77,7 @@ class DynamicObjectTracker:
                     self.all_objects[new_obj.id] = new_obj # track all over time
 
                 self.tracked_objects[to_update_id].update_trajectory(new_obj.cur_point, self.cur_frame) # add to tracked object trajectory
-                self.tracked_objects[to_update_id].update(new_obj.mask, next_frame_points) # propogate to next frame for association
+                self.tracked_objects[to_update_id].update(new_obj.mask, new_obj_cur_points) # update mask and current points
 
             mask = np.zeros((self.H, self.W), dtype=bool)
 
@@ -97,24 +94,27 @@ class DynamicObjectTracker:
 
         return dynamic_mask, orig_dynamic_mask
     
-    def labeled_mask_to_objects(self, labeled_mask, num_features, coords_3d_frame, cam_pose):
+    def labeled_mask_to_objects(self, labeled_mask, num_features, coords_3d_frame, raft_coords_3d_1, cam_pose):
         """
         labeled_mask: (H, W)
         coords_3d_frame: (H*W, 3)
         """
         objects = []
+        object_cur_points = []
         for i in range(1, num_features + 1):
             mask = (labeled_mask == i).reshape((-1)).astype(bool)
-            points = remove_nan_points(coords_3d_frame[mask])
+            prev_points = remove_nan_points(raft_coords_3d_1[mask])
+            cur_points = remove_nan_points(coords_3d_frame[mask])
 
-            if len(points) < 4: continue
-            if self.bad_dynamic_object_check(points): continue
+            if len(prev_points) < 4 or len(cur_points) < 4: continue
+            if self.bad_dynamic_object_check(prev_points): continue
 
-            obj = DynamicObjectTrack(self._id, mask, points)
+            obj = DynamicObjectTrack(self._id, mask, prev_points)
             self._id += 1
             objects.append(obj)
+            object_cur_points.append(cur_points)
 
-        return objects
+        return objects, object_cur_points
     
     def bad_dynamic_object_check(self, points):
         centered_points = points - points.mean(axis=0)
