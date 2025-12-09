@@ -41,6 +41,7 @@ if __name__ == '__main__':
     cam_pose_data = params.load_camera_pose_data()
     img_data = params.load_img_data()
     depth_data = params.load_depth_data()
+    processing_params = params.processing_params
     print('pose, img, depth data loaded')
 
     # print(len(cam_pose_data.positions))
@@ -60,6 +61,8 @@ if __name__ == '__main__':
 
     gof_flow = GeometricOpticalFlow(depth_data.camera_params, device=params.device)
     tracker = DynamicObjectTracker(params.tracking_params, depth_data.camera_params, effective_fps)
+    
+    last_frame_tensor = 0
 
     for index in tqdm(range(1, N_frames, params.batch_size)):
 
@@ -88,9 +91,13 @@ if __name__ == '__main__':
         coords_3d, geometric_coords_3d_1 = gof_flow.unproject_and_transform(batch_depth_imgs[1:], batch_T_0_1)
         raft_flows_3d = (raft_coords_3d_1 - coords_3d).view(N, gof_flow.H, gof_flow.W, 3) # (B H W 3) 
         geometric_flows_3d = (geometric_coords_3d_1 - coords_3d).view(N, gof_flow.H, gof_flow.W, 3) # (B H W 3) 
-        residual_flow = raft_flows_3d - geometric_flows_3d # (B H W 3)
+        residual_flow_3d = raft_flows_3d - geometric_flows_3d # (B H W 3)
 
         batch_first_imgs = batch_imgs.permute(0, 3, 1, 2)
+        
+        raft_flows_3d = raft_flows_3d.cpu()
+        geometric_flows_3d = geometric_flows_3d.cpu()
+        residual_flow_3d = residual_flow_3d.cpu()
 
         raft_flows_2d = raft_flows_2d.cpu()
         gflow_2d = gflow_2d.cpu()
@@ -98,15 +105,30 @@ if __name__ == '__main__':
 
         tensor_list = []
         
-        tensor_list.append(raft_flows_2d)
+        if processing_params.use_raft_flows_3d:
+            tensor_list.append(raft_flows_3d)
 
-        tensor_list.append(gflow_2d)
+        if processing_params.use_geometric_flows_3d:
+            tensor_list.append(geometric_flows_3d)
 
-        tensor_list.append(residual_2d)
-        
-        tensor_list.append(batch_depth_imgs[1:].cpu().unsqueeze(-1)) #cut start off as that is index - 1
-        
-        tensor_list.append(batch_img1s.cpu())
+        if processing_params.use_residual_flow_3d:
+            tensor_list.append(residual_flow_3d)
+
+        # 2D Flows
+        if processing_params.use_raft_flows_2d:
+            tensor_list.append(raft_flows_2d)
+
+        if processing_params.use_gflow_2d:
+            tensor_list.append(gflow_2d)
+
+        if processing_params.use_residual_2d:
+            tensor_list.append(residual_2d)
+
+        if processing_params.use_depth_data:
+            tensor_list.append(batch_depth_imgs[1:].cpu().unsqueeze(-1))
+
+        if processing_params.use_image_data:
+            tensor_list.append(batch_img1s.cpu())
 
         combined_flow_batch = torch.cat(tensor_list, dim=-1)
         
@@ -114,5 +136,7 @@ if __name__ == '__main__':
         for batch_idx in range(batch_size):
             frame_number = index + batch_idx
             single_frame_tensor = combined_flow_batch[batch_idx].cpu()
-            filename = f"{params.output}{frame_number:05d}.pt"
+            last_frame_tensor = single_frame_tensor
+            filename = f"{params.output}{frame_number:05d}base.pt"
             torch.save(single_frame_tensor, filename)
+    print(f"All of the frames have been processed, they are of shape {last_frame_tensor.shape}")

@@ -141,7 +141,27 @@ class TrackingParams:
     @classmethod
     def from_dict(cls, params_dict):
         return cls(**params_dict)
+
+@dataclass
+class ProcessingParams:
+    # 3D Flows
+    use_raft_flows_3d: bool = True
+    use_geometric_flows_3d: bool = True
+    use_residual_flow_3d: bool = True
     
+    # 2D Flows
+    use_raft_flows_2d: bool = True
+    use_gflow_2d: bool = True
+    use_residual_2d: bool = True
+    
+    # Other Data
+    use_depth_data: bool = True
+    use_image_data: bool = True
+
+    @classmethod
+    def from_dict(cls, params_dict):
+        return cls(**params_dict)
+
 @dataclass
 class VizParams:
     viz_video: bool
@@ -174,6 +194,7 @@ class Params:
     depth_data_params: DepthDataParams
     pose_data_params: PoseDataParams
     raft_params: RaftParams
+    processing_params: ProcessingParams
     tracking_params: TrackingParams
     viz_params: VizParams
     time_params: dict
@@ -204,6 +225,7 @@ class Params:
             depth_data_params=DepthDataParams.from_dict(params['depth_data']),
             pose_data_params=PoseDataParams.from_dict(params['pose_data']),
             raft_params=RaftParams.from_dict(params['raft']),
+            processing_params=ProcessingParams.from_dict(params['processing']),
             tracking_params=TrackingParams.from_dict(params['tracking']),
             viz_params=VizParams.from_dict(params['viz']),
             time_params=params['time'] if 'time' in params else None,

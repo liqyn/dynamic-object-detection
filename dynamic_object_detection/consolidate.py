@@ -11,7 +11,7 @@ def combine_tensors_by_index(folder_path: str, base_name: str):
     """
     
     # 1. Define the regex patterns
-    pattern_normal = re.compile(rf"^{base_name}(\d{{5}})\.pt$")
+    pattern_normal = re.compile(rf"^{base_name}(\d{{5}})base\.pt$")
     pattern_dino = re.compile(rf"^{base_name}(\d{{5}})dino\.pt$")
     
     # 2. Group files by their 5-digit index
@@ -43,6 +43,8 @@ def combine_tensors_by_index(folder_path: str, base_name: str):
 
     sorted_indices = sorted(file_groups.keys())
     
+    last_tensor = 0
+
     for index in tqdm(sorted_indices, desc="Concatenating files"):
         group = file_groups[index]
         
@@ -50,7 +52,7 @@ def combine_tensors_by_index(folder_path: str, base_name: str):
             path_normal = group['normal']
             path_dino = group['dino']
             
-            output_filename = f"{base_name}{index}_combined.pt"
+            output_filename = f"{base_name}{index}.pt"
             output_path = os.path.join(folder_path, output_filename)
             
             try:
@@ -64,14 +66,15 @@ def combine_tensors_by_index(folder_path: str, base_name: str):
 
                 # Concatenate along the last dimension (dim=-1)
                 combined_tensor = torch.cat((tensor_normal, tensor_dino), dim=-1)
-                
+                last_tensor = combined_tensor
+
                 # Save the combined tensor (saving to disk will save it on the CPU by default)
                 torch.save(combined_tensor, output_path)
                 
             except Exception as e:
                 print(f"Error processing index {index}: {e}")
                 
-    print("Processing complete.")
+    print(f"Processing complete. Tensors are now of shape {last_tensor.shape}")
 
 # --- Command-Line Argument Handling ---
 
@@ -89,7 +92,7 @@ if __name__ == '__main__':
     parser.add_argument(
         'base_name',
         type=str,
-        help="The common base name for the files (e.g., 'two_objs'). Files should match 'base_name00001.pt' and 'base_name00001dino.pt'."
+        help="The common base name for the files (e.g., 'two_objs'). Files should match 'base_name00001base.pt' and 'base_name00001dino.pt'."
     )
     
     args = parser.parse_args()
