@@ -1,3 +1,6 @@
 [submodule "RAFT"]
 	path = RAFT
 	url = https://github.com/princeton-vl/RAFT.git
+[submodule "Pytorch-UNet"]
+	path = Pytorch-UNet
+	url = https://github.com/alexluchianov/Pytorch-UNet
