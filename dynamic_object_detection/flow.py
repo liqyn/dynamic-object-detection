@@ -55,6 +55,18 @@ class GeometricOpticalFlow:
 
         # not time normalized, done in tracker.py
         return coords_3d, resid_vel, gflow                                                                  # (N, H*W, 3), (N, H, W), (N, H, W, 2)                   
+    
+    def compute_residual_2d_flow_not_normalized(self, raft_flow, depth_images, T_0_1):
+        """
+        raft_flow: (N, H, W, 2)
+        depth_images: (N, H, W) (starts at index 1 of original depth images)
+        T_0_1: (N, 4, 4)
+        """
+        coords_3d, gflow = self.compute_optical_flow_batch(depth_images, T_0_1)                             # (N, H, W, 2)
+
+        resid_flow = raft_flow - gflow                                                                      # (N, H, W, 2)
+
+        return gflow, resid_flow                                                                            # (N, H, W, 2), (N, H, W, 2)
         
 
     @torch.no_grad()
