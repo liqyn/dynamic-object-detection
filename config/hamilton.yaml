@@ -4,7 +4,7 @@ use_3d: False
 
 # device/batch size for raft & geometric optical flow
 device: cuda
-batch_size: 24
+batch_size: 12
 
 original_fps: 30
 # run once every `skip_frames` frames
@@ -56,6 +56,21 @@ pose_data:
     # string: "T_FLURDF"
     parent: hamilton/base
     child: hamilton/forward_color_optical_frame
+
+processing:
+  # 3D Flows
+  use_raft_flows_3d: False
+  use_geometric_flows_3d: False
+  use_residual_flow_3d: False
+  
+  # 2D Flows
+  use_raft_flows_2d: True
+  use_gflow_2d: True
+  use_residual_2d: True
+  
+  # Other Data
+  use_depth_data: True
+  use_image_data: True
 
 tracking:
   # for 3D:
