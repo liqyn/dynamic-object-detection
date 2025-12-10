@@ -334,7 +334,7 @@ body {
 				<p> We note that most of these works build upon image segmentation towards video segmentation and that advacements in the former also tend to provide advancements in the latter.
 				However, this relationship is not unidirectional and sometimes advancements in video segmentation can provide advancements in image.
 				<a href="#ref_5">[5]</a> provides a framework for generating synthetic flows from depth data. This enables models that are reliant on optical flow cues to provide similar results when tested on static images.
-				Specifically, this implies that our work can be further generalized to the static images.
+				Specifically, this implies that our work can be further generalized to static images.
 			
 			</div>
 			<div class="margin-right-block">
@@ -400,8 +400,8 @@ body {
 				    <strong>RGB Data</strong>: The raw RGB image.
 				  </li>
 				</ul>
-
 				
+				These inputs will be later fed into the U-Net in the form of an image with enough channels for all of the above.
 
 		</div>
 			<div class="margin-right-block">
@@ -527,7 +527,7 @@ body {
 			  </thead>
 			  <tbody>
 			    <tr>
-			      <td>Model 1 (e.g., Raft-Kitti)</td>
+			      <td>Model 1 ()</td>
 			      <td>&#10003;</td>
 			      <td>&cross;</td>
 			      <td>&cross;</td>
@@ -630,7 +630,15 @@ body {
 			<div class="main-content-block">
 
 				<h1> Conclusion </h1>
+				We observed significantly better results the model-based approaches when compared to the original morphological operations one. 
 				
+
+				<p> We believe that the performance of our models could be further improved by providing them with additional training data and more training time. 
+				Given how hard it is to generate meaningful training data, data augmentation methods
+				should be explored in order to make the most efficient use of the already collected data. 
+
+				<p> One thing that persisted between the original approach and the model-based approach are the optical flow frame glitches that stem from noisy depth or odometry data.
+				We believe that these momentary glitches can be overcome by moving to an architecture that
 			</div>
 			<div class="margin-right-block">
 			</div>
