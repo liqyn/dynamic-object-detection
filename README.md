@@ -22,10 +22,9 @@ pip install -e .
 Tested on a system with an i9-14900HX, GeForce RTX 4090 Laptop GPU (16GB), 32GB RAM. May not work on systems
 with less memory, even if `batch_size` is decreased.
 
+## Demos
 
 ### Learned
-
-#### Demo
 
 To run the evaluation data in our blog: 
 
@@ -48,9 +47,11 @@ python3 dynamic_object_detection/learned/offline_learned.py -p config/lewis_lear
 
 Videos and metrics will be saved to '/out/lewis_learned*'
 
+---
+
 ### Non-Learned
 
-#### Demo
+#### Run
 
 To run the evaluation data in our blog, download the following rosbags:
 [hamilton data](https://drive.google.com/file/d/1kZmhye7E61mLJtyaEFTm_aBValKu3VF5/view?usp=sharing) (ROS1), 
