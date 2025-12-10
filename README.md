@@ -6,7 +6,7 @@
 
 Using residuals between RAFT predicted optical flow and ego motion-induced geometric optical flow to detect moving objects from a mobile platform.
 
-https://github.com/user-attachments/assets/0100457d-c09d-4f91-9d25-a054e7a9ddd3
+https://github.com/user-attachments/assets/d7710c1c-179d-4a12-83a8-948953c0368a
 
 #### Dependencies
 
@@ -45,7 +45,7 @@ export UNET=/path/to/dynamic-object-detection/Pytorch-UNet
 python3 dynamic_object_detection/learned/offline_learned.py -p config/lewis_learned_eval.yaml
 ```
 
-Videos and metrics will be saved to '/out/lewis_learned*'
+Videos and evaluation metrics will be saved to '/out/lewis_learned...'
 
 ---
 
