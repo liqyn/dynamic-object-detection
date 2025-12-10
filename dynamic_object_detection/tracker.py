@@ -4,7 +4,9 @@ import numpy as np
 from dynamic_object_detection.dod_util import global_nearest_neighbor, remove_nan_points
 from scipy.ndimage import label
 
-OVERLAY = np.array([0, 0, 255], dtype=np.uint8)
+TEXT_OVERLAY = (0, 255, 0)
+BBOX_OVERLAY = (0, 0, 255)
+OVERLAY = (np.array([255, 0, 0], dtype=np.uint8))
 
 def global_nearest_neighbor_dynamic_objects(tracked_objects: dict, new_objects: list, cost_fn: callable, max_cost: float=None):
     """
@@ -82,13 +84,26 @@ class DynamicObjectTracker:
             mask = np.zeros((self.H, self.W), dtype=bool)
 
             if draw_objects:
+                imgs[frame][mask] = imgs[frame][mask] * 0.4 + OVERLAY * 0.6
+                
                 for obj in self.tracked_objects.values():
                     obj_mask = obj.mask.reshape((self.H, self.W)).astype(np.uint8)
                     mask = np.logical_or(mask, obj_mask)
-                    obj_mask_center = np.mean(np.argwhere(obj_mask > 0), axis=0).astype(int)
-                    imgs[frame] = cv.putText(imgs[frame], str(obj.id), (obj_mask_center[1], obj_mask_center[0]), cv.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
 
-                imgs[frame][mask] = imgs[frame][mask] * 0.4 + OVERLAY * 0.6
+                    coords = np.argwhere(obj_mask > 0)  # coordinates of mask
+                    ymin, xmin = coords.min(axis=0)
+                    ymax, xmax = coords.max(axis=0)
+
+                    imgs[frame] = cv.rectangle(
+                        imgs[frame],
+                        (xmin, ymin),
+                        (xmax, ymax),
+                        color=BBOX_OVERLAY,
+                        thickness=2
+                    )
+
+                    obj_mask_center = np.mean(coords, axis=0).astype(int)
+                    imgs[frame] = cv.putText(imgs[frame], str(obj.id), (obj_mask_center[1], obj_mask_center[0]), cv.FONT_HERSHEY_SIMPLEX, 1.5, TEXT_OVERLAY, 2)
 
             self.cur_frame += 1
 

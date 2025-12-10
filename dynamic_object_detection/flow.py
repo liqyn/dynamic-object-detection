@@ -11,18 +11,18 @@ class GeometricOpticalFlow:
 
         self.inv_K = torch.linalg.inv(self.K)  # (3, 3)
 
+        self.f_rescale = torch.tensor([self.inv_K[0, 0], self.inv_K[1, 1]], 
+                                      dtype=torch.float32, device=device)                                   # (2,)
+
         self.pixel_coords, self.pixel_coords_flattened = self.compute_pixel_coords()                        # (H, W, 2), (H*W, 2)
         self.norm_cam_coords_h = self.get_norm_cam_coords_h(self.pixel_coords_flattened).view(1, -1, 3)     # (1, H*W, 3)
 
+    @torch.no_grad()
     def compute_flow(self, raft_flow, depth_images, T_0_1, use_3d=False):
         """
         raft_flow: (N, H, W, 2)
         depth_images: (N+1, H, W)
         T_0_1: (N, 4, 4)
-
-        returns:
-            coords_3d: (N, H*W, 3)
-            resid_vel: (N, H, W)
         """
 
         raft_coords_3d_1 = self.raft_unproject(raft_flow, depth_images[:-1])                                # (N, H*W, 3), (N, H, W)
@@ -37,7 +37,8 @@ class GeometricOpticalFlow:
 
     # --------------- For 2D flow --------------- #
 
-    def compute_residual_2d_flow(self, raft_flow, depth_images, T_0_1):
+    @torch.no_grad()
+    def compute_residual_2d_flow(self, raft_flow, depth_images, T_0_1, norm=True):
         """
         raft_flow: (N, H, W, 2)
         depth_images: (N, H, W) (starts at index 1 of original depth images)
@@ -47,15 +48,15 @@ class GeometricOpticalFlow:
 
         resid_flow = raft_flow - gflow                                                                      # (N, H, W, 2)
 
-        resid_flow = self.concat_last_axis(resid_flow, ones=False)                                          # (N, H, W, 3)
+        resid_flow = resid_flow * self.f_rescale[None, None, None, :]                                       # (N, H, W, 2)
 
-        resid_flow = torch.einsum('ij,nhwj->nhwi', self.inv_K, resid_flow)                                  # (N, H, W, 3)
-
-        resid_vel = depth_images * torch.linalg.norm(resid_flow, dim=-1)                                    # (N, H, W)
+        resid_flow = depth_images.unsqueeze(-1) * resid_flow                                                 # (N, H, W, 2)
+        if norm:
+            resid_flow = torch.linalg.norm(resid_flow, dim=-1)                                              # (N, H, W)
 
         # not time normalized, done in tracker.py
-        return coords_3d, resid_vel, gflow                                                                  # (N, H*W, 3), (N, H, W), (N, H, W, 2)                   
-        
+        return coords_3d, resid_flow, gflow                                                                  # (N, H*W, 3), (N, H, W (2)), (N, H, W, 2)                   
+    
 
     @torch.no_grad()
     def compute_optical_flow_batch(self, depth_images, T_0_1):

@@ -1,14 +1,15 @@
 <html>
-<head>
+	<head>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-<script id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-</script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script id="MathJax-script" async
+			src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+		</script>
 
-<link rel="shortcut icon" href="images/icon.ico">
-<style type="text/css">
-	body {
+		<link rel="shortcut icon" href="images/icon.ico">
+		<style type="text/css">
+body {
 		background-color: #f5f9ff;
 	}
 
@@ -68,7 +69,8 @@
 			max-width: 100%; /* Make sure it fits inside the container */
 			height: auto;
 			display: block;
-			margin: 0;
+			/* margin: 0; */
+			margin: auto;
 	}
 	/* Hide both video displays initially, will display based on JS detection */
   .vid-mobile, .vid-non-mobile { display: none; }
@@ -217,186 +219,741 @@
 		border-bottom: 2px solid black; /* Makes the line at the bottom of thead thicker */
 	}
 
-</style>
+		</style>
 
-	  <title>FLOROS</title>
-      <meta property="og:title" content="FLOROS" />
-			<meta charset="UTF-8">
-  </head>
+		<title>LOFT: Learned Open Set Flow-based Tracking</title>
+		<meta property="og:title" content="LOFT: Learned Open Set Flow-based Tracking" />
+		<meta charset="UTF-8">
+	</head>
 
-  <body>
+	<body>
 
 		<div class="content-margin-container">
-				<div class="margin-left-block">
-				</div>
-		    <div class="main-content-block">
-						<table class="header" align=left style="margin: 30px 0px 0px 0px;">
-								<tr>
-									<td colspan=4>
-										<span style="font-size: 32px; font-family: 'Garamond', serif;">FLOROS: <span class="underl">Flo</span>w <span class="underl">R</span>esiduals for <span class="underl">O</span>pen <span class="underl">S</span>et Dynamic Object Tracking</span>
-									</td>
-								</tr>
-								<tr>
-										<td align=left>
-												<span style="font-size:21px"><a href="">Qingyuan Li</a></span>
-										</td>
-										<td align=left>
-												<span style="font-size:21px"><a href="">Juan Rached</a></span>
-										</td>
-								<tr>
-									<td colspan=4 align=left><span style="font-size:18px">MIT 6.8300 Final Project</span></td>
-								</tr>
-						</table>
-					</div>
-					<div class="margin-right-block">
-					</div>
-		</div>
-
-		<div class="content-margin-container" id="intro">
-				<div class="margin-left-block">
-          <!-- table of contents here -->
-          <div style="position:fixed; max-width:inherit; top:max(20%,120px); font-size:16px; border: none;">
-              <b style="font-size:18px">Outline</b><br><br>
-              <a href="#intro">Introduction</a><br><br>
-              <a href="#related_works">Related Works</a><br><br>
-              <a href="#methods">Methodology</a><br><br>
-              <a href="#experiments">Experiments</a><br><br>
-              <a href="#results">Results</a><br><br>
-              <a href="#conclusion">Conclusion</a><br><br>
-              <a href="#citations">References</a><br><br>
-			  <a href="#codebase">Codebase</a><br><br>
-			  <a href="#appendix">Appendix</a><br><br>
-          </div>
-				</div>
-		    <div class="main-content-block">
-            <!--You can embed an image like this:-->
-			<hr style="margin-bottom: 30px;">
-			<img src="./images/banner1.png" width=100%/>
-		    </div>
-		    <div class="margin-right-block">
-		    </div>
-		</div>
-
-    <div class="content-margin-container" id="intro">
-				<div class="margin-left-block">
-				</div>
-		    <div class="main-content-block">
-						<h1>Introduction</h1>
-			<p>
-				Advances in autonomous Unmanned Aerial Vehicle (UAV) and Unmanned Ground Vehicle (UGV) navigation are improving our quality of life. The integration of this technology into emergency services, 
-				search and rescue, first responders, law enforcement, and agriculture has observed accelerated growth in the past decade, promising a safer future.
-				UAV/UGV navigation has also had an impact in the delivery industry, where UAV/UGV deliveries enable the prompt 
-				dispatch of essential products, such as medicine, to remote communities, difficult to access through typical shipping. However, this is still an early technology,
-				with several limitations and open research questions. In particular, dynamic obstacle avoidance for UAV/UGVs is a longstanding problem in robotics.
-			</p>
-			<p>
-				Current state-of-the-art methods rely on event cameras, stereo cameras, depth cameras, or lidar.
-				However, power and payload limitations restrict the perception and compute capacity of unmanned vehicles, particularly UAVs. These constraints force a difficult
-				balance between latency and performance for real-time applications that is still an open question in the field today. 
-				Some methods favor efficiency while others favor performance, but the field is yet to adopt a general procedure to estimate the motion of dynamic obstacles. 
-				As a consequence, a large number of path planning algorithms assume static environments, but this is a 
-				strong assumption given that we live in a dynamic world. Some methods perform dynamic obstacle avoidance by assuming the state of the dynamic obstacle is known at all times. 
-				This is fine in a laboratory setting, where a motion capture system can provide such estimates, but breaks in real-world applications. Therefore, a scheme for estimating the motion 
-				of dynamic obstacles from sensory input is indispensable if we are to deploy a complete system. Some approaches employ Kalman filters to recover the position and velocity of obstacles in the field 
-				of view from point clouds, but these methods are either restrictive, allowing robust planning only around vehicles with known dynamics, or brittle, if nothing is assumed about the obstacles' dynamics. 
-			</p>
-			<p>
-				There are two core challenges in estimating the motion of objects from a moving platform:
-				<ol>
-					<li>Estimating the motion of the scene.</li>
-					<li>Removing the motion of the vehicle attached to the camera.</li>	
-				</ol>
-			</p>
-			<p>
-				Unfortunately, this becomes increasingly difficult when performing highly dynamic, high-speed motion, as is the norm in the UAV literature. At those speeds,
-				odometry latency and inaccuracy build up quickly, and motion blur can pollute the visual signal, which complicates the task of separating agent 
-				from obstacle motion. In this project, we propose using a combination of RAFT optical flow and the geometric optical 
-				flow induced by scene flow to solve both of the aforementioned problems with just a frame camera.
-			</p>
-            <img src="./images/banner.png" width=100%/>
-		    </div>
-		    <div class="margin-right-block">
-		    </div>
-	</div>
-
-	<div class="content-margin-container" id="related_works">
 			<div class="margin-left-block">
 			</div>
-		<div class="main-content-block">
-					<h1>Related Work</h1>
-		<p>
-			In <a href="#ref_1">[1]</a>, Tordesillas et al propose a fast and safe trajectory planner that plans in known and unknown environments. In other words, it plans within the observed and 
-			unobserved regions of the map. But this approach assumes a static world. <a href="#ref_2">[2]</a> and <a href="#ref_3">[3]</a> present a multiagent, asynchronous, and decentralized trajectory
-			planner and an extension to mitigate delay checks in hardware deployment. While both <a href="#ref_2">[2]</a> and <a href="#ref_3">[3]</a> can plan in dynamic environments, they assume that the state of the 
-			dynamic objects is known. <a href="#ref_4">[4]</a>, a real-time perception-aware trajectory planner for multirotor UAVs, can plan in dynamic environments and does not expect 
-			the state of dynamic objects to be given. Instead, <a href="#ref_4">[4]</a> clusters the point clouds produced by an onboard depth sensor and applies the Hungarian algorithm to track 
-			those clusters. <a href="#ref_4">[4]</a>, however, does not work in static scenes, and its point cloud scheme breaks when static objects are picked up by the depth sensor as well. 
-		</p>
-		
-		<p>		
-			<a href="#ref_5">[5]</a> proposes the use of event cameras for low-latency dynamic obstacle detection and avoidance.
-			While they achieve faster response times than frame cameras, event cameras are expensive and do not capture the full scene. 
-			Since they cannot pick up static objects or color, they are incapable of performing tasks relevant to robotics systems, such as feature matching, segmentation, etc.
-			Frame cameras can be used to solve a variety of perception tasks, but require more elaborate algorithms for motion detection than event cameras. 
-		</p>
+			<div class="main-content-block">
+				<table class="header" align=left style="margin: 30px 0px 0px 0px;">
+					<tr>
+						<span style="font-size: 32px; font-family: 'Garamond', serif;">
+							 LOFT:  <span class="overL">L</span>earned <span class="overL">O</span>pen <span class="overL">F</span>low-based <span class="overL">T</span>racking
+						</span>
 
-
-		<p>
-			The fundamental vision-based approach to motion estimation is optical flow, and optical flow methods for UAV applications have been thoroughly studied <a href="#ref_6">[6]</a>. 
-			But standard optical flow struggles with fine motion estimation, particularly at high speeds and in dynamic lighting conditions, making it inadequate for UAV navigation. Additionally, 
-			pure optical flow methods estimate motion between frames, but cannot distinguish individual objects or track them over time.
-			<a href="#ref_7">[7]</a> presents a transformer-based point tracking pipeline that successfully estimates the trajectory of dynamic objects from medium-to-long video sequences. 
-			Estimating obstacle trajectories with point tracking is considerably more robust than with optical flow alone, but <a href="#ref_7">[7]</a> still would require a procedure to remove 
-			ego motion from the point tracks if running on a moving agent. 	
-		</p>
-
-		<p>
-			<a href="#ref_8">[8]</a> leverages the scene flow induced by a moving camera to produce high-quality camera poses, intrinsics, and depth estimates. 
-			We propose reversing the pipeline from <a href="#ref_8">[8]</a>, computing the expected optical flow between two frames given depth data, camera poses, and intrinsics, under the assumption of a static scene. 
-			If there are any non-static objects in the scene, we can subtract the expected optical flow from the RAFT-estimated optical flow <a href="#ref_9">[9]</a> to estimate motion in the scene not explained by ego movement.
-			We will develop an algorithm to convert the residuals into a discrete list of moving objects and their masks, and will propagate masks between frames to obtain tracks for dynamic obstacles over time. 
-
-		</p>
-		
+					</tr>
+					<tr>
+						<td align=left>
+							<span style="font-size:17px"><a href="index.html">Qingyuan Li</a></span>
+						</td>
+						<td align=left>
+							<span style="font-size:17px"><a href="index.html">Alexandru Luchianov</a></span>
+						</td>
+						<tr>
+							<td colspan=4 align=left><span style="font-size:18px">Final project for MIT 6.7960</span></td>
+						</tr>
+				</table>
+			</div>
+			<div class="margin-right-block">
+			</div>
 		</div>
-		<div class="margin-right-block">
-		</div>
-	</div>
 
-	<div class="content-margin-container" id="methods">
-				<div class="margin-left-block">
+		<div class="content-margin-container" id="preface">
+			<div class="margin-left-block">
+				<!-- table of contents here -->
+				<div style="position:fixed; max-width:inherit; top:max(20%,120px); font-size:16px;">
+					<b style="font-size:16px">Outline</b><br><br>
+					<a href="#preface">Preface</a><br><br>
+					<a href="#motivation">Motivation</a><br><br>
+					<a href="#related">Related works</a><br><br>
+					<a href="#inputs">Model inputs</a><br><br>
+					<a href="#unet">U-Net</a><br><br>
+					<a href="#dataset">Dataset Collection</a><br><br>
+					<a href="#metrics">Metrics</a><br><br>
+					<a href="#evaluation">Evaluation</a><br><br>
+					<a href="#conclusion">Conclusion</a><br><br>
+					<a href="#codebase">Codebase</a><br><br>
+					<a href="#citations">References</a><br><br>
+					<a href="#appendix">Appendix</a><br><br>
 				</div>
-		    <div class="main-content-block">
-				<hr style="margin-bottom: 30px">
-					<h1>Methodology</h1>
+			</div>
+			<div class="main-content-block">
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="preface">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+				<figure>
+					<img src="./images/main.png">
+				</figure>
+				<br>
+				<h1>Preface </h1>
+				One of the <a href='https://liqyn.github.io/dynamic-object-detection/floros/'>previous projects of Qingyuan Li</a> involved dynamic object tracking by using the flow residual information, however the result was lacking.
+				This section aims to provide context as to what the previous approach did, why it failed and why deep learning is the solution.
+
+				<p> In very succinct terms, the core pipeline of the previous project could be described as such:
+				<ol>
+					<li> Gather data for the dynamic object tracking experiment. </li>
+					<li> Extract the optical flow from the image using a known model(RAFT) </li>
+					<li> Process the optical flow and the original frame to obtain the objects </li>
+				</ol>
+
+				The idea seems simple in practice, so simple, in fact, that this project could also be described by a similar list of steps.
+				However, "processing the optical flow" hides a lot of abstraction underneath. In the previous project, this processing meant tagging every pixel 
+				that is moving faster than a certain velocity as a "dynamic object" and then merely post-processing the binary mask with OpenCV morphological operations in order to remove the noise.
+				This game of post-processing was akin to Whac-a-mole, opening an image would remove small points of noise, closing would remove small holes, but the noise would still be noticeable. (See Video 1 for an example.)
+				The winning strategy of this game was, obviously, not to play at all. For this project, we decided that a model is much better suited at learning what set of transformations would be best.
+
+				<figure>
+					<video class='my-video' loop autoplay muted controls style="width: 800px; max-width: 100%;">
+						<source src="./videos/non_learned.mp4" type="video/mp4">
+					</video>
+
+					<div class="caption">
+					<span>Video 1. Example output sequence from the evaluation dataset with the non-learned algorithm</span>
+					</div>
+				</figure>
+
+				<p>Unfortunately, replacing the manual transformation of data by a learning model subtly (and signficantly) changes the other steps of the pipeline too. 
+				The most significant change was that of what ground truth is necessary. In the previous iteration of the project our evaluation metric was merely whether the detected location of the object was close enough
+				to where we know the object to be. However, our segmentation model requires the whole segmentation of the object as a ground truth.
+
+				<p>We could not collect this ground truth as we were only able to collect data about the approximate pose of the objects.
+				Note that if we had the shape of the objects, we would have been able to generate the ground truth by simply projecting them. 
+				Our solution is to generate the ground truth using the Segment Anything model (<a href="#ref_2">[2]</a>) and then train our smaller model on that.
+				Note that training on this synthetic data makes our model inherently less accurate than SAM, however our model is much lighter.
+
+				<p>
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="motivation">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+
+				<h1>Motivation</h1>
+
+				Unmanned Aerial Vehicles and Unmaned ground vehicles have numerous applications in fields such as delivery, photography, monitoring and many others. 
+				However, being unmanned leaves them dependent on signal coverage and a stable connection in order to be teleoperated by an operator.
+				In order to overcome this limitation, much effort has been directed towards the issue of autonomous control.
+
+				<p> Unfortunately, autonomous control has its own set of limitations. Where a human would be able to operate with only limited signal,
+				an autonomous device often requires significantly more sensors. For example, a Waymo car employs a total of 29 cameras and possesses Lidar capabilities.
+				This extensive payload is the reason why adoption is limited even for low-risk applications. 
+
+				<p> We aim to provide a lightweight solution for performing real-time dynamic obstacle recognition. 
+		
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="related">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+
+				<h1>Related works</h1>
+
+				Segmentation is an extremely broad field that has spawned many diverse tasks. 
+				In order to tackle the ever-expanding nature of the field, significant time and effort has been invested in creating capable models that can adapt to many of these existing tasks.
+				One of the most prominent and succesful examples of such a project is the Segment Anything (<a href="#ref_2">[2]</a>) model. Naturally, the model's core strength, its generality, is also its core weakness 
+				as it cannot properly take advantage of highly specific advantages. To put this into our context of Video Object Segmentation, SAM(Segment Anything Model) cannot take advantage of the information that is inherent in the video format 
+				and must segment each frame independently.
+
+				<p> A more recent work that tries to bridge this gap is <a href="#ref_1">[1]</a>. Instead of ignoring the information from the video feed itself, it tries to feed the optical flow either as an input (by converting it to an RGB image) 
+				or to create prompts for the original image.
+				While this approach does not discard the useful data from the video, it achieves its purpose in a roundabout way that avoid training a new model and thus not really specializing.
+				Another significant disadvantage acknowledged by the authors of the paper: SAM is computationally heavy, thus the resulting model is also extremely slow.
+				In contrast, our model is trained and specialized, thus is can be much lighter and efficient.
+
+				<p> <a href="#ref_4">[4]</a> and <a href="#ref_3">[3]</a> further generalize the SAM model, thus allowing it to to process videos. Note that this advancement obsoletes the papers that merely provide a wrapper around SAM 
+				in order to provide it with additional video capabilities. Unfortunately, SAM is still a massive model that is extremely computationally expensive and thus impractical for our purposes. However, we do note
+				that it is still a key component of our pipeline that allows us to cheaply and reliably generate ground truths for our collected training data. 
+
+				<p> <a href="#ref_10">[10]</a> further augments SAM by providing semantic context from DINO(<a href="#ref_11">[11]</a>) features.
+				While this approach achieves really high accuracy, that is achieved at the cost of speed. We considered using DINO features with our model, however we ultimately decided against it 
+				due to DINO feature vectors being really long and not compatible with our idea of creating a lightweight model.
+
+				<p>An example of a lightweight model that makes use of optical flow is RST-MODNet (<a href="#ref_9">[9]</a>).
+				This model uses a LSTM-based network in order to leverage the temporal information to a stronger degree. 
+				The disadvantage of this approach is that the recurrent nature of the network makes it really computationally expensive to train.
+				Another significant difference is that they use the raw optical flow, rather than the residual flow which accounts for the movement of the observer.
+
+				<p> We note that most of these works build upon image segmentation towards video segmentation and that advacements in the former also tend to provide advancements in the latter.
+				However, this relationship is not unidirectional and sometimes advancements in video segmentation can provide advancements in image.
+				<a href="#ref_5">[5]</a> provides a framework for generating synthetic flows from depth data. This enables models that are reliant on optical flow cues to provide similar results when tested on static images.
+				Specifically, this implies that our work can be further generalized to static images.
+			
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="inputs">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+
+				<h1>Model inputs</h1>
+
+				As one of the main ingredients, it is natural that we dedicate some of our attention to the problem of optical flow. 
+				Due to it being a relatively common problem there exist pretty performant solutions such as RAFT (<a href="#ref_6">[6]</a>). We additionally remark that not only is RAFT one of the solutions, 
+				it is the primary solution to the problem of optical flow, being at the base of most of the related works. Even though optical flow can be summarized roughly as "how did a pixel move between frames" and then used as blackbox,
+				we consider that some context about this "black box" could help us make an informed decision about the rest of our architecture.
+
+				<p> Formally, optical flow solves the below optimization problem:
+				\[ E = \min_{\mu} \left[ (\nabla^T \mathbf{I}_1\mu - (\mathbf{I}_2-\mathbf{I}_1)^2+\alpha(|\nabla \mu_x|^2+|\nabla \mu_y|^2)) \right] \]
+
+				<p> There are two core assumptions that motivate the above formulation:
+				<ol>
+					<li> <strong>Color constancy:</strong> Pixels won't spontaneously change colors. </li>
+					<li> <strong>Velocity averaging: </strong> Nearby pixels move together. </li>
+				</ol>
+
+				<p> Obviously, these assumptions are not universal truths and one can construct scenarios in which they do no hold ranging from the most contrived
+				(we are trying to follow a chameleon or every pixel has a mind of its own and running independently) 
+				to quite mundane things (lighting conditions change or it is raining).
+				In our case, we performed our data collection in an indoor environment where such anomalies can be controlled and minimized. 
+
+				<p> A pitfall of the optimization problem formulation is that often we don't have only two adjacent frames, but rather an entire video. 
+				Solving an optimization problem for each two adjacent frames would be extremely computationally expensive. RAFT circumvents expensive computation 
+				by extracting per-pixel features and building multi-scale 4D correlation volumes. Aside from the efficiency gains, this representation confers it 
+				some additional robustness against lighting changes and blur.
+
+				<p> For the sake brevity, we will only provide a description of each of the model inputs. (For an actual derivation of them, please refer to the <a href="#appendix">appendix</a>):
+				
+				<ul>
+				  <li>
+				    <strong>RAFT Flows 2D</strong>: Flow of a pixel from the previous frame to the current frame as computed by RAFT
+				  </li>
+				  <li>
+				    <strong>Geometric Flow 2D</strong>: Flow of a pixel if we assume that the background is static and we account only for the camera movement. 
+				  </li>
+				  <li>
+				    <strong>Residual 2D</strong>: The difference between the RAFT flow and the geometric flow. This represents the actual movement in 2-dimensional space induced by the object, not by the camera.
+				  <li>
+				    <strong>RAFT Flows 3D</strong>: Flow of a pixel from the previous frame to the current frame as computed by RAFT plus the depth information.
+				  </li>
+				  <li>
+				    <strong>Geometric Flows 3D</strong>: Flow of a pixel in 3-dimensional space if we assume that the background is static and we account only for the camera movement.
+				  </li>
+				  <li>
+				    <strong>Residual Flow 3D</strong>: The difference between the RAFT flow and the geometric flow. This represents the actual movement in 3-dimensional space induced by the object, not by the camera.
+				  </li>
+				  <li>
+				    <strong>Depth Data</strong>: Depth information for each pixel. Note that this is capped at 6m meters due to the limitations of our sensors.  
+				  </li>
+				  <li>
+				    <strong>RGB Data</strong>: The raw RGB image.
+				  </li>
+				</ul>
+				
+				These inputs will be later fed into the U-Net in the form of an image with enough channels for all of the above.
+
+		</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="unet">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+
+				<h1> U-Net </h1>
+
+				Image segmentation is a notoriously hard problem to annotate data for.
+				Rather than trying to annotate an ever-increasing amount of data, some projects have opted for trying to make more efficient use of the existing annotated data.
+				This has led to the creation of the U-Net (<a href="#ref_7">[7]</a>). Aside from their efficiency in terms of training data, these models are small, fast and reliable. 
+				This makes them a natural choice of a base on which to build our custom model.
+
+				<p> A succinct description of the U-net architecture is that it consists of a contracting path and an expansive path. 
+				The contractive path reduces the resolution of the image by downsampling while adding more channels in order to propagate context.
+				The expansive path does the exact opposite: it upsamples while reducing the number of channels.
+				This leads the network to have a "U" structure, thus providing it with its name. The details of the paths are more easily apparent in 
+				the visual reminder of the U-Net architecture that we also provide below in the form of Figure 1:
+
+
+				<figure>
+					<img src="./images/u-net-architecture.png"
+					     alt="Traditional U-Net architecture diagram showing the encoder, decoder, and skip connections."
+					     >
+
+						 <div class="caption">
+			  <span>Figure 1: The U-Net Architecture.</span>
+			</div>
+				</figure>
+
+				The main distinction between the traditional architecture and ours is that instead of using a traditional RGB image, we instead add additional channels that provide additional context.
+				This additional context is mostly either depth information or optical flow information. Note that optical flow itself also can be presented in many ways such as either 3-dimensional, 2-dimensional, RAFT flow or geometric flow.
+
+				<p> We use the Dice coefficient in order to evaluate the outputs of the U-Net and train it. We note that this metric only measures the quality of the segmentation which is merely an intermediate product. 
+				The overall metric that we use for dynamic object detection is different. We remind that the dice formula is 
+				$$DSC = \frac{2|X \cap Y|}{|X| + |Y|}$$
+
+				If our collected data was free of noise, then X would be the set of segmented pixels in the ground truth and Y would be set of segmented pixels in the output of our model. 
+				However, due to imperfect collection of data some of our depth pixels were nan. In order to account for the errors of our equipment, we only included the unaffected pixels in this metric.
+
+				<p> The specific U-Net implementation on which we based our work can be found here at <a href="#ref_8">[8]</a>.
+		</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="dataset">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+
+				<h1> Dataset colection </h1>
+
+				We collected all of the training and evaluation data at the Highbay of the Aerospace Controls Laboratory at MIT. 
+				This controlled environmnet provided us with stable lightning and weather conditions in order for the optical flow to be easy to detect accurately,
+				and contains a ground truth motion capture system for evaluation.
+				We remind that our aim is to measure the efficacy of the techniques applied for the processing of optical flow and image data, not to optimize optical flow detection itself. 
+
+				<p> In terms of hardware, we used a RealSense D455 depth camera on a Clearpath Husky with an Ouster lidar and MicroStrain IMU running lidar-inertial odometry. The moving objects are teleoperated hexcopter and another ground robot.
+
+				<p> The ground truth pose data was collected using a Vicon motion capture system and recorded in a ROS2(Robot Operating System) bag. The Husky recorded a ROS1 bag with depth camera and pose data. We use our own ROS bag processing software for dataloading.
+				Note that the ground truth collected above only provided pose information. Ground truth pose information combined with a rought estimate of the shapes of the robots allowed us to compute approximate bounding boxes.
+				This allowed us to use SAM(<a href="#ref_2">[2]</a>) with bounding box-guided prompts to generate ground truth for the image segmentation. 
+		
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="metrics">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+
+				<h1> Metrics </h1>
+
+				We used the standard precision and recall metrics in order to quantify the performance of our model. 
+				Note that since ground truth data and visual data are collected by different machines, there might exist discrepancies gaps in the collected timestamps. 
+				In order to account for this, we only compute the metrics for frames for which there exists a close enough ground truth. Let the model return a list of detected dynamic objects and their poses.
+
+				<p>We consider an object to be relevant only if we could feasibly detect it and the detected position is close to the true location (within one meter).
+				By feasibly detect, we mean that we only consider objects that are both moving with high enough velocity (at least 0.1 m/s) and whose centroid lies within the boundary of the current image frame.
+
+				Based on this definition of relevant we provide the following metrics:
+				<ul>
+					<li><strong>Precision:</strong> The ratio of returned objects that actually are relevant (actually exist and could be detected) </li>
+					<li><strong>Recall:</strong> The ratio of relevant objects(that actually exist and could be detected) that were actually returned  </li>
+				</ul>
+
+				All evaluations were run with the RAFT Sintel model.
+				Opening and closing with a 9x9 kernel were used as morphological operations for post-processing all binary masks to reduce point noise.
+				Objects with a maximum standard deviation below 0.05m or above 1.0m are ignored. Objects beyond the depth range are also ignored.
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+		
+		<div class="content-margin-container" id="evaluation">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+				<h1> Evaluation </h1>
+
+				<div class="caption">
+			  <span>Table 1. Comparison of the inputs included for each one of the models</span>
+			</div>
+
+			<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
+			  <thead>
+			    <tr>
+			      <th>Model</th>
+			      <th>RAFT Flows 2D</th>
+			      <th>Geometric Flow 2D</th>
+			      <th>Residual 2D</th>
+			      <th>RAFT Flows 3D</th>
+			      <th>Geometric Flows 3D</th>
+			      <th>Residual Flow 3D</th>
+			      <th>Depth (Cur)</th>
+			      <th>RGB (Cur)</th>
+				  <th>Depth (Prev)</th>
+			      <th>RGB (Prev)</th>
+			    </tr>
+			  </thead>
+			  <tbody>
+			    <tr>
+			      <td>Non-learned</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+				  <td>&cross;</td>
+			      <td>&cross;</td>
+			    </tr>
+				<tr>
+			      <td>1xRGBD Only</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&cross;</td>
+			      <td>&cross;</td>
+			    </tr>
+				<tr>
+			      <td>1xRGBD + 2d Residuals</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&cross;</td>
+			      <td>&cross;</td>
+			    </tr>
+				<tr>
+			      <td>1xRGBD + 3d Residuals</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&cross;</td>
+			      <td>&cross;</td>
+			    </tr>
+				<!-- <tr>
+			      <td>1xRGBD + All Residuals</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&cross;</td>
+			      <td>&cross;</td>
+			    </tr> -->
+				<tr>
+			      <td>2xRGBD Only</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&#10003;</td>
+			      <td>&#10003;</td>
+			    </tr>
+				<tr>
+			      <td>2xRGBD + 2d Residuals</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&#10003;</td>
+			      <td>&#10003;</td>
+			    </tr>
+				<tr>
+			      <td>2xRGBD + 3d Residuals</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&#10003;</td>
+			      <td>&#10003;</td>
+			    </tr>
+				<!-- <tr>
+			      <td>2xRGBD + All Residuals</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&cross;</td>
+			      <td>&cross;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&#10003;</td>
+			      <td>&#10003;</td>
+			    </tr> -->
+				<tr>
+			      <td>2xRGBD Full</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+			      <td>&#10003;</td>
+				  <td>&#10003;</td>
+			      <td>&#10003;</td>
+			    </tr>
+			  </tbody>
+			</table>
+			<br>
+
+
+			<div class="caption">
+			  <span>Table 2. Comparison of model performance</span>
+			</div>
+
+			<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
+			  <thead>
+			    <tr>
+			      <th>Model</th>
+			      <th>Dice coefficient</th>
+			      <th>Recall</th>
+				  <th>Precision</th>
+			    </tr>
+				<tr>
+			      <td>Non-learned</td>
+			      <td>0.475</td>
+			      <td>0.713</td>
+			      <td>0.320</td>
+				</tr>
+				<tr>
+			      <td>1xRGBD Only</td>
+			      <td>0.440</td>
+			      <td><strong>0.973</strong></td>
+			      <td>0.510</td>
+				</tr>
+				<tr>
+			      <td>1xRGBD + 2D Residuals</td>
+			      <td>0.499</td>
+			      <td>0.934</td>
+			      <td>0.499</td>
+				</tr>
+				<tr>
+			      <td>1xRGBD + 3D Residuals</td>
+			      <td>0.478</td>
+			      <td>0.886</td>
+			      <td>0.424</td>
+				</tr>
+				<!-- <tr>
+			      <td>1xRGBD + All Residuals</td>
+			      <td>X</td>
+			      <td>X</td>
+			      <td>X</td>
+				</tr> -->
+				<tr>
+			      <td>2xRGBD Only</td>
+			      <td>0.491</td>
+			      <td>0.908</td>
+			      <td>0.523</td>
+				</tr>
+				<tr>
+			      <td>2xRGBD + 2D Residuals</td>
+			      <td>0.474</td>
+			      <td>0.936</td>
+			      <td>0.468</td>
+				</tr>
+				<tr>
+			      <td>2xRGBD + 3D Residuals</td>
+			      <td>0.464</td>
+			      <td>0.940</td>
+			      <td>0.462</td>
+				</tr>
+				<!-- <tr>
+			      <td>2xRGBD + All Residuals</td>
+			      <td>X</td>
+			      <td>X</td>
+			      <td>X</td>
+				</tr> -->
+				<tr>
+			      <td>2xRGBD Full</td>
+			      <td><strong>0.528</strong></td>
+			      <td>0.904</td>
+			      <td><strong>0.538</strong></td>
+				</tr>
+			  </thead>
+			</table>
+					
+			<br>
 
 			<p>
-				We compute the residuals from RAFT optical flow and the geometric optical flow induced by scene flow, using solely RGBD and odometry data. The latter assumes a static scene, so 
-				subtracting the flow produced by the motion of the vehicle produces residuals that theoretically capture only the movement of the dynamic objects in the scene. Below is a 
-				detailed discussion on how each of the modules involved in our approach works and the role they play in the pipeline. 
+
+
 			</p>
 
-			<h4>Theory</h4>
-			<p>
-				Optical flow assigns pixel correspondences between two frames by solving the optimization problem below: 
-			</p>
-			\[ E = \min_{\mu} \left[ (\nabla^T \mathbf{I}_1\mu - (\mathbf{I}_2-\mathbf{I}_1)^2+\alpha(|\nabla \mu_x|^2+|\nabla \mu_y|^2)) \right] \] 
+			<br>
+			
+			<figure>
+				<video class='my-video' loop autoplay muted controls style="width: 800px; max-width: 100%;">
+					<source src="./videos/full_eval.mp4" type="video/mp4">
+				</video>
 
-			<p>
-				Where the first term enforces correspondences based on the color constancy assumption, which states that the color of each point in the scene does not change between frames, and the second term promotes smooth uniform flow by encouraging each 
-				flow vector to be close to the average of its neighboring vectors. Common pitfalls of classic optical flow include: 
+				<div class="caption">
+				<span>Video 2. Example output sequence from the evaluation dataset (2xRGBD Full)</span>
+				</div>
+			</figure>
+
+			The full evaluation video for 2xRGBD Full can be found <a href="https://drive.google.com/file/d/1YNJtrirsRWK8CpCwfgdxLsONLG5R5X97/view?usp=sharing">here</a>.
+
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+
+		<div class="content-margin-container" id="conclusion">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+
+				<h1> Conclusion </h1>
+				<p>
+				We observed significantly better results with the model-based approaches when compared to the original non-learned algorithm in both precision and recall,
+				achieving our objective of real-time dynamic object detection with high accuracy.
+
+
+				<p>
+				We note that the recall of the models was significantly higher than their precision. 
+				Based on examination of the videos, we reached the conclusion that this is due to noisy frames with many false positives
+				in which the RAFT and geometric flow significantly diverge, most likely due to noisy odometry or depth. 
+				This leads the whole frame to become 
+				noisy, thus possibly detecting many more objects in the image. In our training and evaluation data 
+				there are at most 2 objects, thus there is only so many false negatives that one can incur per frame,
+				and our models tend to be aggressive in their detections.	
+				
+				
+				<p>
+
+				Interestingly, and perhaps somewhat expectedly, the model that only uses RGBD data without any flow information already outperforms the non-learned method by a large margin.
+				Therefore, much of this improvement can probably be attributed to the model learning how to detect robots (moving or not) from the RGB and depth data alone.
+				Still, the model that used all of the inputs outperformed all other methods in Dice coefficient and precision, suggesting
+				that the optical flow residuals do provide useful information for the task of dynamic object detection. These specific improved metrics suggest that 
+				the model is better able to distinguish between moving and static robots, thus slightly reducing false positives (though not significantly,
+				because of the high noise ratio), which reflects the value of the optical flow information. To better understand this behavior, 
+				we would need to collect and train on data in which the robots do not move a majority of the time.
+
+				<p>
+				As seen in Figure 2, the model also generalizes to humans, despite never having seen any human data during training, suggesting highly promising generalization capabilities.
+				<figure>
+					<img src="./images/human.png"
+					     alt="Human being detected."
+					     >
+
+						 <div class="caption">
+			  <span>Figure 2: a moving human being detected</span>
+			</div>
+				</figure>
+			
+
+				<p> We believe that the performance of our models could be further improved by providing them with additional training data and more training time,
+					especially due to the high false positive rate.
+				Given how hard it is to generate meaningful training data, data augmentation methods
+				should be explored in order to allow for creating larger datasets from pre-existing data. 
+				To leverage the additional data, a more complex model, possibly using attention mechanisms, could be explored as well. However,
+				model complexity would likely come at the cost of inference speed.
+				</p>
+
+				<p>
+					Another area of improvement could be to improve temporal consistency.
+					Currently, each sequence of two frames is treated independently, however, in practice, temporal consistency could provide significant improvements.
+					Methods such as LSTMs or 3D convolutions could be explored for this purpose. Again, these methods would likely slow the method down significantly.
+				</p>
+
+				<p> 
+
+				In conclusion, we believe that our method provides a lightweight and efficient solution for dynamic object detection.
+				Future work could explore more complex models and temporal consistency in order to further improve performance, but 
+				over 90% recall and over 50% precision is a promising result for a model trained from scratch with limited data.
 			</p>
-			<ol>
-				<li>It is expensive to solve an optimization problem for each frame in a video sequence.</li>
-				<li>The color constancy assumption is susceptible to blur and changes in lighting conditions.</li>
-			</ol>
-			<p>
-				As a consequence, it has become the norm to substitute the classical optical flow approach with learned models, the most notable of which is 
-				RAFT. RAFT extracts per-pixel features and builds multi-scale 4D correlation volumes. This rich representation allows the model to generalize 
-				and reduce the effect of lighting changes and blur on the flow estimates. The compact representation makes it so that computing the flow between 
-				each frame is also faster than solving the original optimization problem. 
-			</p>
-			<p>
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+		
+		<div class="content-margin-container" id="codebase">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+				<h1> Codebase </h1>
+				<p>See <a href="https://github.com/AndyLi23/dynamic-object-detection" target="_blank">[dynamic-object-detection on Github]</a> for our implementation.
+					Instructions for downloading our data and running the algorithm and evaluations are in the README. 
+					
+					Note that this repository only contains the code responsible for the dynamic object detection side of things. 
+					Our fork of the U-Net repository is linked as a submodule and contains more training and evaluation information.
+				</p>
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+		
+		<div class="content-margin-container" id="Acknowledgements">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+				<h1> Acknowledgements </h1>
+				We would like to thank Professor Jonathan How for his guidance throughout this project and for generously providing access to the resources that we utilized.
+				Special thanks as well to Lucas Jia for assisting us with physical experiments, data collection and providing us with hardware powerful enough to train our model.
+			</div>
+			<div class="margin-right-block">
+			</div>
+		</div>
+		
+		<div class="content-margin-container" id="citations">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+				<div class='citation' id="references" style="height:auto"><br>
+					<span style="font-size:16px">References:</span><br><br>
+					<a id="ref_1"></a>[1] <a href="https://arxiv.org/abs/2404.12389">Moving Object Segmentation: All You Need Is SAM (and Flow)</a>, Junyu Xie, Charig Yang, Weidi Xie, and Andrew Zisserman, 2024<br><br>
+					<a id="ref_2"></a>[2] <a href="https://arxiv.org/abs/2304.02643">Segment Anything</a>, Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer Whitehead, Alexander C. Berg, Wan-Yen Lo, Piotr Dollár, and Ross Girshick, 2023<br><br>
+					<a id="ref_3"></a>[3] <a href="https://arxiv.org/abs/2408.00714">SAM 2: Segment Anything in Images and Videos</a>, Nikhila Ravi, Valentin Gabeur, Yuan-Ting Hu, Ronghang Hu, and 14 others, 2024<br><br>
+					<a id="ref_4"></a>[4] <a href="https://arxiv.org/abs/2511.16719">SAM 3: Segment Anything with Concepts</a>, Nicolas Carion, Laura Gustafson, Yuan-Ting Hu, Shoubhik Debnath, Ronghang Hu, Didac Suris, Chaitanya Ryali, Kalyan Vasudev Alwala, Haitham Khedr, and 13 others, 2025<br><br>
+					<a id="ref_5"></a>[5] <a href="https://arxiv.org/abs/2507.19790">DepthFlow: Exploiting Depth-Flow Structural Correlations for Unsupervised Video Object Segmentation</a>, Suhwan Cho, Minhyeok Lee, Jungho Lee, Donghyeong Kim, and Sangyoun Lee, 2025<br><br>
+					<a id="ref_6"></a>[6] <a href="https://arxiv.org/abs/2003.12039">RAFT: Recurrent All-Pairs Field Transforms for Optical Flow</a>, Zachary Teed and Jia Deng, 2020<br><br>
+
+					<a id="ref_7"></a>[7] <a href="https://arxiv.org/abs/1505.04597">U-Net: Convolutional Networks for Biomedical Image Segmentation</a>, Olaf Ronneberger, Philipp Fischer, and Thomas Brox, 2015<br><br>
+
+					<a id="ref_8"></a>[8] <a href="https://github.com/milesial/Pytorch-UNet">Pytorch-UNet: PyTorch implementation of the U-Net for image semantic segmentation with high quality images</a>, Milesial, 2024<br><br>
+
+					<a id="ref_9"></a>[9] P. L. et al., <a href="https://arxiv.org/abs/1912.00438">"RST-MODNet: Real-time Spatio-temporal Moving Object Detection for Autonomous Driving,"</a> 2019.<br><br>
+
+					<a id="ref_10"></a>[10] N. Huang, W. Zheng, C. Xu, K. Keutzer, S. Zhang, A. Kanazawa, and Q. Wang, <a href="https://arxiv.org/abs/2503.22268">"Segment Any Motion in Videos,"</a> *Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)*, 2025.<br><br>
+					<a id="ref_11"></a>[11] M. Oquab et al., <a href="https://arxiv.org/abs/2304.07193">"DINOv2: Learning Robust Visual Features without Supervision,"</a> *Trans. Mach. Learn. Res. (TMLR)*, 2024.<br><br>
+
+				</div>
+			</div>
+			<div class="margin-right-block">
+				<!-- margin notes for reference block here -->
+			</div>
+		</div>
+
+
+		<div class="content-margin-container" id="appendix">
+			<div class="margin-left-block">
+			</div>
+			<div class="main-content-block">
+				<h1> Appendix </h1>
+				This analysis of the difference between the RAFT optical flow and geometric optical flow is reproduced from the previous project.
+				
+				<blockquote class="centered-quote">
 				We obtain our flow residuals by computing the difference between the RAFT optical flow and the "geometric optical flow", or optical flow
 				resulting solely from camera-induced scene flow. 
 				<br><br>
@@ -420,26 +977,24 @@
 
 				\[ [u'_{dynamic}, v'_{dynamic}] = [f_x \frac{p_{2,x} + \delta_x}{p_{2,z} + \delta_z} + c_x, f_y \frac{p_{2,y} + \delta_y}{p_{2,z} + \delta_z} + c_y] \]
 
-	
-				In the video below, RAFT optical flow is juxtaposed with geometric optical flow. 
-				Where the geometric optical flow is white, it cannot be computed because there is no depth data (we capped the
-				max depth at 6.0m; see <a href="#app1">Appendix I.</a>).
-			</p>
-			<div class="media-container">
-				<video class='my-video' loop autoplay muted controls style="width: 800px; max-width: 100%;">
-					<source src="./videos/flow.mp4" type="video/mp4">
-				</video>
-			</div>
-			<div class="caption">
-				<span>Figure 1. Clockwise from top left: RGB image, depth image, <br>geometric optical flow, RAFT flow</span>
-			</div>
-			<p>
-
 				Since RAFT estimates the actual observed optical flow from frame 1 to frame 2, it will return an optical flow close to \( [u'_{dynamic}, v'_{dynamic}] - [u, v] \) at \( [u, v] \).
 				Then, the residual (RAFT minus geometric flow) at \( [u, v] \) is \( [u'_{dynamic}, v'_{dynamic}] - [u', v'] \).
+				
+				<p> Because we have the depth data for both frame 1 and frame 2, in theory we can compute the full 3D movement
+					of each pixel between frames.
+				Given RAFT flow \( [\delta u_{raft}, \delta v_{raft}] \) at pixel \( [u, v] \), we can compute the 3D residual as follows:
+					\[ p_2 = (T_{odom}^{cam})^{-1} \cdot T_{r2}^{r1} \cdot T_{odom}^{cam} \cdot [p_1^T \dots 1]^T + [u_{raft}, v_{raft}, 0]^T \]
+					\[ p_{2, raft} = d_2 K^{-1} [u + \delta u_{raft}, v + \delta v_{raft}, 1]^T \]
+					\[ \delta \approx p_{2, raft} - p_2 \]
 
-				Although we could theoretically recover the depth of \( [u'_{dynamic}, v'_{dynamic}] \) from the depth data for frame 2, in practice, noisy depth data and imperfect
-				pixel associations make this a noisy process (see <a href="#app2">Appendix II.</a>). Instead, we assume that the object maintains constant depth between frames (\( \delta_z = 0 \)) and use the residual to recover only \( [\delta_x, \delta_y] \):
+					where \( d_2 \) is the depth of pixel \( [u + \delta u_{raft}, v + \delta v_{raft}] \) in frame 2. This method works by
+					assuming that RAFT correctly predicts pixel correspondences, in which case the 3D point corresponding to pixel
+					\( [u + \delta u_{raft}, v + \delta v_{raft}] \) in frame 2 is the same as the 3D point corresponding to pixel \( [u, v] \) in frame 1.
+					Since \( p_2 \) accounts for the camera motion between frames but not the motion of the point itself, while RAFT accounts
+					for both, the difference is the approximate 3D motion of the point between frames.
+
+					<p> Although we could theoretically recover the depth of \( [u'_{dynamic}, v'_{dynamic}] \) from the depth data for frame 2, in practice, noisy depth data and imperfect
+				pixel associations make this a noisy process. Instead, we assume that the object maintains constant depth between frames (\( \delta_z = 0 \)) and use the residual to recover only \( [\delta_x, \delta_y] \):
 
 				\[ [\delta_x, \delta_y] = p_{2,z} ([u'_{dynamic}, v'_{dynamic}] - [u', v']) \cdot [\frac{1}{f_x}, \frac{1}{f_y}] \] 
 
@@ -447,681 +1002,13 @@
 				<br><br>
 				Finally, given \( v=\| \delta_x, \delta_y \| \) as an estimate for the velocity of the 3D point corresponding to each pixel, we can mask areas of the image with
 				\( v \) higher than a set threshold to obtain masks of dynamic objects in frame 1.
-
-				
-			</p>
-			<h4>Prototype</h4>
-
-			<p>Below is a video of our prototype of this method running on data from Kimera-Multi <a href="#ref_10">[10]</a>, where the right image shows flow residual magnitudes masked by the velocity threshold. 
-				To track the motion of dynamic objects across frames, we first fed the residuals to the point tracking algorithm from <a href="#ref_7">[7]</a>.
-				However, this introduces unnecessary computation, as RAFT optical flow is accurate enough to estimate the motion of each obstacle between the current and next frame.
-				The details are discussed below.
-			</p>
-			<div class="media-container">
-				<video class='my-video' loop autoplay muted controls style="width: 300px; max-width: 50%;">
-					<source src="./videos/prototype/kimera/kimera_walk_og.mp4" type="video/mp4">
-				</video>
-				<video class='my-video' loop autoplay muted controls style="width: 300px; max-width: 50%;">
-					<source src="./videos/prototype/kimera/walk_masked_pt.mp4" type="video/mp4">
-				</video>
+				</blockquote>
 			</div>
-			<div class="caption">
-				<span>Figure 2. Top is RGB image, bottom is flow residual magnitude <br> masked by the velocity threshold.</span>
+			<div class="margin-right-block">
 			</div>
-			<h4>Final Algorithm</h4>
-			<p>
-				We implemented the above method in a pipeline that works with standard ROS bags as input data, with flow and residuals computed in batches using PyTorch tensors on GPU 
-				for performance. Once velocity magnitudes are computed from residual flow, we apply a threshold to the velocity magnitudes to obtain a binary mask of dynamic objects.
-				The threshold can be tuned. Because depth camera noise increases as depth increases, we set the threshold to scale by depth: \( thresh=min\_thresh + d \cdot thresh\_depth\_gain \)
-			</p>
-			<p>
-				Because of the noise in odometry and depth data, we improved the performance by post-processing the binary mask with OpenCV morphological operations.
-				Opening removes small points of noise, while closing removes small holes in the mask.
-
-				Once we have extracted a processed binary mask for the frame, we use scipy.ndimage.label to label connected components. Each connected component is extracted
-				as a mask and assumed to be a dynamic object. The pixels in the mask are unprojected to get a 3D pointcloud representing the dynamic object. We discard 
-				objects with a maximum axial variance outside a set range to further remove noise.
-			</p>
-			<p>
-				To facilitate tracking, we compute frame-by-frame associations between currently tracked dynamic objects and newly detected dynamic objects.
-			</p>
-			<p>
-				At each iteration, we predict the 3D location of currently tracked dynamic objects by propagating their masks into the next image frame using optical flow,
-				then using the next frame's depth data to unproject the masks into predicted point clouds. When dynamic objects are detected in the next frame, we unproject their masks
-				in that frame to get detected point clouds. We then use the Hungarian algorithm for global nearest neighbors with point cloud centroid distance-based similarity to match newly detected dynamic objects with 
-				currently tracked dynamic objects using their associated point clouds. 
-				<br><br>
-				We augment the cost matrix and set costs to a large value if the point clouds are more than 
-				a set distance apart, so that newly detected objects not close to any currently tracked objects are not matched and become new tracked objects. Otherwise, currently
-				tracked objects are updated with their new detections.
-			</p>
-			<p>Representative videos of our algorithm running on the data we collected are shown below. Top left and right are the RGB and depth images. 
-				Bottom right is the velocity residual magnitude, and bottom left is the post-processed binary mask. Overlaid on the images are the tracked 
-				dynamic objects and their IDs.
-				Noise is still present, but much of it is filtered out.
-			</p>
-			<div class="media-container">
-				<video class='my-video' loop autoplay muted controls style="width: 800px; max-width: 100%;">
-					<source src="./videos/hamilton.mp4" type="video/mp4">
-				</video>
-			</div>
-			<div class="caption">
-				<span>Figure 3. Clockwise from top left: RGB image, depth image, <br>
-					velocity magnitude from flow residual, post-processed binary mask</span>
-			</div>
-			<br>
-			<div class="media-container">
-				<video class='my-video' loop autoplay muted controls style="width: 800px; max-width: 100%;">
-					<source src="./videos/hamilton_two_robots.mp4" type="video/mp4">
-				</video>
-			</div>
-			<div class="caption">
-				<span>Figure 4. The same dynamic object maintains a consistent ID throughout frames where it is <br>
-					moving continuously, showing the efficacy of the Hungarian algorithm for frame-to-frame association.
-				</span>
-			</div>
-			</div>
-		    <div class="margin-right-block" style="transform: translate(0%, -100%);"> <!-- you can move the margin notes up and down with translate -->
-		    </div>
-	</div>
-
-	<div class="content-margin-container" id="experiments">
-		<div class="margin-left-block">
-		</div>
-		<div class="main-content-block">
-			<hr style="margin-bottom: 30px">
-		<h1>Experiments</h1>
-		<h4>Dataset</h4>
-            We evaluate our method on our own dataset, collected in the Highbay of the Aerospace Controls Laboratory at MIT. We used a RealSense D455 depth camera 
-			on a Clearpath Husky with an Ouster lidar and MicroStrain IMU running lidar-inertial odometry. The moving objects are a hexcopter and another ground robot.
-			All robots were teleoperated. The ground truth pose data was collected using a Vicon motion capture system and recorded in a ROS2 bag. The Husky recorded 
-			a ROS1 bag with depth camera and pose data. We use our own ROS bag processing software for dataloading.
-			<br><br>
-			The video of our algorithm running on the entire dataset is linked here: <a href="/dynamic-object-detection/videos/hamilton_full.mp4" target="_blank">[hamilton full demo]</a>.
-
-			<h4>Metrics</h4>
-
-			We run our algorithm on the entire dataset. For each frame of the output, if there is ground truth data close to the associated timestamp, we compute the 
-			following metrics:
-
-			<ul>
-				<li>Theoretical number of dynamic objects according to ground truth data. (\( N_{gt} \))</li>
-					<ul>
-						<li>Since we have ground truth poses, we can compute where the Scout and hexcopter are in the current image frame.
-							We can also approximate their velocities by linearizing around their poses at that frame (0.25s ahead/behind).
-							If the centroid of a robot is within the image dimensions and it has an approximate velocity 
-							above the depth-scaled threshold from the parameters, we count it as a dynamic object in that frame.</li>
-					</ul>
-				<li>Number of detected ground truth dynamic objects (\( N_{det} \))</li>
-					<ul>
-						<li>If there is a detected object in that frame with a point cloud centroid within 1.0m* of the ground truth dynamic object pose, 
-							we count that object as detected in that frame.
-						</li>
-						<li>This also gives us the number of ground truth dynamic objects not detected; i.e., false negative (\( N_{missed} \))</li>
-					</ul>
-				<li>Total number of detected dynamic objects (\( N \))</li>
-				<li>Number of correctly detected dynamic objects. (\( N_{corr} \))</li>
-					<ul>
-						<li>
-							If the detected object's point cloud centroid is within 1.0m of the ground truth object pose, we count it as a correct detection.
-						</li>
-						<li>
-							This also gives us the number of detected dynamic objects not associated with ground truth data; i.e., false positives (\( N_{incorr} \)).
-						</li>
-					</ul>
-			</ul>
-
-			<i>* Our robots are ~1.0m in their largest dimension, so we used that as a reasonable threshold. The ground truth data is 
-			not aligned with the robot center of mass in the robot Z axis, creating steady state error. Although far from a perfect 
-			metric, this should be a reasonable estimate and allow us to compare runs with different parameters.</i> <br><br>
-
-
-			We also define the following percentages for ease of comparison:
-			<ul>
-				<li>Percentage of ground truth dynamic objects detected \( det\% =\dfrac{N_{det}}{N_{gt}}\)</li>
-				<li>Percentage of false positives \( fp\% =\dfrac{N_{incorr}}{N}\)</li>
-			</ul>
-		</div>
-		<div class="margin-right-block">
-		</div>
-	</div>
-
-	<div class="content-margin-container" id="results">
-			<div class="margin-left-block">
-			</div>
-		<div class="main-content-block">
-		<h1>Results</h1>
-		We evaluated the performance of our algorithm when certain parameters are changed, while all others are kept constant. 
-		First, we determined the best RAFT model for our application. RAFT options were not touched, besides defining iter=12 for each model.
-
-		<div class="caption">
-			<span>Table 1. RAFT model comparison</span>
-		</div>
-		<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
-			<thead>
-				<tr>
-					<th>Model</th>
-					<th>\( N_{gt} \)</th>
-					<th>\( N_{det} \)</th>
-					<th>\( N \)</th>
-					<th>\( N_{corr} \)</th>
-					<th>\( det\% \)</th>
-					<th>\( fp\% \)</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>raft-kitti</td>
-					<td>1283</td>
-					<td>1041</td>
-					<td>1416</td>
-					<td>1058</td>
-					<td>81.14%</td>
-					<td>25.28%</td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td>raft-things</td>
-					<td>1283</td>
-					<td>1085</td>
-					<td>1383</td>
-					<td>1110</td>
-					<td>84.57%</td>
-					<td>19.74%</td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td><strong>raft-sintel</strong></td>
-					<td>1283</td>
-					<td>1088</td>
-					<td>1384</td>
-					<td>1114</td>
-					<td><strong>84.80%</strong></td>
-					<td><strong>19.51%</strong></td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td>raft-chairs</td>
-					<td>1283</td>
-					<td>672</td>
-					<td>1173</td>
-					<td>702</td>
-					<td>52.38%</td>
-					<td>40.15%</td>
-				</tr>
-			</tbody>
-		</table>
-		<br>
-		Subsequent evaluations were run with the raft-sintel model.
-		<br><br>
-		We then evaluated the effect of framerate on our algorithm. The original RGBD data was recorded at 30Hz,
-		but we downsampled it to 15, 10, and 6 Hz.
-		
-		<div class="caption">
-			<span>Table 2. Framerate comparison</span>
 		</div>
 
-		<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
-			<thead>
-				<tr>
-					<th>Framerate</th>
-					<th>\( N_{gt} \)</th>
-					<th>\( N_{det} \)</th>
-					<th>\( N \)</th>
-					<th>\( N_{corr} \)</th>
-					<th>\( det\% \)</th>
-					<th>\( fp\% \)</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td><strong>15Hz</strong></td>
-					<td>1283</td>
-					<td>1088</td>
-					<td>1384</td>
-					<td>1114</td>
-					<td><strong>84.80%</strong></td>
-					<td>19.51%</td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td>10Hz</td>
-					<td>849</td>
-					<td>715</td>
-					<td>900</td>
-					<td>731</td>
-					<td>84.22%</td>
-					<td><strong>18.78%</strong></td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td>6Hz</td>
-					<td>513</td>
-					<td>416</td>
-					<td>530</td>
-					<td>422</td>
-					<td>81.09%</td>
-					<td>20.38%</td>
-				</tr>
-			</tbody>
-		</table>
-		<br>
-		The relative performance of the algorithm is similar across framerates, but a higher framerate allows for earlier 
-		detection of dynamic objects. Therefore, we ran all other evaluations at 15Hz.
-
-		<br><br>
-		We then evaluated the effect of various noise-reduction methods by performing ablations on various 
-		parameters of the algorithm.
-
-		<div class="caption">
-			<span>Table 3. Noise reduction comparison</span>
-		</div>
-
-		<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
-			<thead>
-				<tr>
-					<th>Method</th>
-					<th>\( N_{gt} \)</th>
-					<th>\( N_{det} \)</th>
-					<th>\( N \)</th>
-					<th>\( N_{corr} \)</th>
-					<th>\( det\% \)</th>
-					<th>\( fp\% \)</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td><strong>Original</strong></td>
-					<td>1283</td>
-					<td>1088</td>
-					<td>1384</td>
-					<td>1114</td>
-					<td>84.80%</td>
-					<td><strong>19.51%</strong></td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td>No Morphology</td>
-					<td>1283</td>
-					<td>1102</td>
-					<td>2626</td>
-					<td>1294</td>
-					<td>85.89%</td>
-					<td>50.72%</td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td>No axial variance-based threshold</td>
-					<td>1283</td>
-					<td>1119</td>
-					<td>1662</td>
-					<td>1183</td>
-					<td><strong>87.22%</strong></td>
-					<td>28.82%</td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td>No depth-based velocity threshold gain*</td>
-					<td>1318</td>
-					<td>1097</td>
-					<td>1605</td>
-					<td>1112</td>
-					<td>83.23%</td>
-					<td>30.72%</td>
-				</tr>
-			</tbody>
-		</table>
-		<br>
-		<i>* We set the fixed velocity threshold 
-		to 0.775 (0.4 + 0.125 * 3) for this run. This was previously the average velocity threshold in our depth range (6m),
-		since the original parameters were 0.4 for the minimum velocity threshold and 0.125 for the depth-based gain.</i>
-		<br><br>
-		We find that morphological operations are very effective at removing noise from the mask. Variance-based discarding 
-		and depth-based velocity threshold gain also have a noticeable effect. Variance-based thresholding and morphological operations 
-		somewhat reduce the detection rate, but the reduction in false positives is more significant.
-
-		<br><br>
-
-		To further reduce false positives, we evaluated the effect of requiring that a dynamic object 
-		be detected in two consecutive frames before being considered a dynamic object.
-
-		<div class="caption">
-			<span>Table 4. Using 3D residuals</span>
-		</div>
-
-		<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
-			<thead>
-				<tr>
-					<th>Method</th>
-					<th>\( N_{gt} \)</th>
-					<th>\( N_{det} \)</th>
-					<th>\( N \)</th>
-					<th>\( N_{corr} \)</th>
-					<th>\( det\% \)</th>
-					<th>\( fp\% \)</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>Original</td>
-					<td>1283</td>
-					<td>1088</td>
-					<td>1384</td>
-					<td>1114</td>
-					<td><strong>84.80%</strong></td>
-					<td>19.51%</td>
-				</tr>
-			</tbody>
-			<tbody>
-				<tr>
-					<td><strong>2-Consecutive Requirement</strong></td>
-					<td>1283</td>
-					<td>1080</td>
-					<td>1224</td>
-					<td>1093</td>
-					<td>84.18%</td>
-					<td><strong>10.70%</strong></td>
-				</tr>
-			</tbody>
-		</table>
-		<br>
-
-		This change halved the number of false positives and barely decreased the detection rate, though we did not 
-		include it in the default algorithm used for the other evaluations, since we did not want to influence results 
-		by relying on the probabilistic assumption that noise is independent between frames.
-
-		<br><br>
-
-		</div>
-		<div class="margin-right-block">
-		</div>
-	</div>
-
-	<div class="content-margin-container" id="conclusion">
-				<div class="margin-left-block">
-				</div>
-		    <div class="main-content-block">
-						<h1>Conclusion</h1>
-						Although our method shows promise in efficient real-time detection and tracking of dynamic obstacles, it is extremely sensitive to the quality of data. 
-						During our experiments, we observed that poor quality depth data or odometry estimates led to the geometric optical flow having large deviations
-						from the RAFT optical flow in static areas of the image. Future work could include using a trained neural network to segment dynamic objects, since we do not
-						use the corresponding RGB image as a prior for the segmentation of flow residuals. A neural network that also uses FastSAM segments or superpixels
-						would better leverage all the available data. 
-						<br><br>
-						A planned extension of this work is to use LiDAR as the source for depth data. This would greatly increase the range and accuracy of depth data, at
-						the cost of sparsity (which could be addressed with stereo camera-LiDAR fusion). In addition, it may allow us to use the 3D residual method discussed in <a href="#app1">Appendix I</a>,
-						which can better detect movement in the camera Z axis.
-						<br><br>
-						A major limitation of this method is that under high accelerations, the RAFT and geometric flow significantly diverge, leading to underwhelming results during UAV flights. 
-						There are multiple culprits, including noisy depth data and poor RAFT results at high accelerations. The most likely reason seems to be poor odometry,
-						since the divergence often occurs during acceleration, suggesting latency and/or noise in the odometry data. Also, since pose data is collected at independent 
-						times from the RGBD data, we must perform linear interpolation to approximate it every frame, which introduces additional error.
-						<br><br>
-						Despite these shortcomings, our method proves to be a promising approach to the problem of dynamic obstacle tracking. With only odometry and depth camera data, 
-						it demonstrates good performance and runtime on real-world data in the tested environments. There appear to be many directions for further work to
-						improve robustness, efficiency, and generalization.
-		    </div>
-		    <div class="margin-right-block">
-		    </div>
-	</div>
-
-	<div class="content-margin-container" id="citations">
-				<div class="margin-left-block">
-				</div>
-		    <div class="main-content-block">
-						<div class='citation' id="references" style="height:auto"><br>
-							<hr style="margin-bottom: 30px">
-							<h1>References</h1>
-							<a id="ref_1"></a>[1] <a href="https://ieeexplore.ieee.org/abstract/document/8968021">Tordesillas, J., Lopez, B. T., & How, J. P. (2019, November). Faster: Fast and safe trajectory planner for flights in unknown environments. In 2019 IEEE/RSJ international conference on intelligent robots and systems (IROS) (pp. 1934-1940). IEEE.</a><br><br>
-							<a id="ref_2"></a>[2] <a href="https://ieeexplore.ieee.org/abstract/document/9490372	">Tordesillas, J., & How, J. P. (2021). MADER: Trajectory planner in multiagent and dynamic environments. IEEE Transactions on Robotics, 38(1), 463-476.</a><br><br>
-							<a id="ref_3"></a>[3] <a href="https://ieeexplore.ieee.org/abstract/document/10161244">Kondo, K., Tordesillas, J., Figueroa, R., Rached, J., Merkel, J., Lusk, P. C., & How, J. P. (2023, May). Robust MADER: Decentralized and asynchronous multiagent trajectory planner robust to communication delay. In 2023 IEEE International Conference on Robotics and Automation (ICRA) (pp. 1687-1693). IEEE. </a><br><br>
-							<a id="ref_4"></a>[4] <a href="https://ieeexplore.ieee.org/abstract/document/9721028">Tordesillas, J., & How, J. P. (2022). Panther: Perception-aware trajectory planner in dynamic environments. IEEE Access, 10, 22662-22677. </a><br><br>
-							<a id="ref_5"></a>[5] <a href="https://www.science.org/doi/full/10.1126/scirobotics.aaz9712">Falanga, D., Kleber, K., & Scaramuzza, D. (2020). Dynamic obstacle avoidance for quadrotors with event cameras. Science Robotics, 5(40), eaaz9712. </a><br><br>
-							<a id="ref_6"></a>[6] <a href="https://ieeexplore.ieee.org/abstract/document/6564752">Chao, H., Gu, Y., & Napolitano, M. (2013, May). A survey of optical flow techniques for UAV navigation applications. In 2013 International Conference on Unmanned Aircraft Systems (ICUAS) (pp. 710-716). IEEE. </a><br><br>
-							<a id="ref_7"></a>[7] <a href="https://link.springer.com/chapter/10.1007/978-3-031-73033-7_2">Karaev, N., Rocco, I., Graham, B., Neverova, N., Vedaldi, A., & Rupprecht, C. (2024, September). Cotracker: It is better to track together. In European Conference on Computer Vision (pp. 18-35). Cham: Springer Nature Switzerland. </a><br><br>
-							<a id="ref_7"></a>[7] <a href="https://link.springer.com/chapter/10.1007/978-3-031-73033-7_2">Karaev, N., Rocco, I., Graham, B., Neverova, N., Vedaldi, A., & Rupprecht, C. (2024, September). Cotracker: It is better to track together. In European Conference on Computer Vision (pp. 18-35). Cham: Springer Nature Switzerland. </a><br><br>
-							<a id="ref_8"></a>[8] <a href="https://arxiv.org/abs/2404.15259">Smith, C., Charatan, D., Tewari, A., & Sitzmann, V. (2024). Flowmap: High-quality camera poses, intrinsics, and depth via gradient descent. arXiv preprint arXiv:2404.15259.</a><br><br>
-							<a id="ref_9"></a>[9] <a href="https://link.springer.com/chapter/10.1007/978-3-030-58536-5_24">Teed, Z., & Deng, J. (2020). Raft: Recurrent all-pairs field transforms for optical flow. In Computer Vision-ECCV 2020: 16th European Conference, Glasgow, UK, August 23-28, 2020, Proceedings, Part II 16 (pp. 402-419). Springer International Publishing. </a><br><br>
-							<a id="ref_10"></a>[10] <a href="https://ieeexplore.ieee.org/abstract/document/9686955">Tian, Y., Chang, Y., Arias, F. H., Nieto-Granda, C., How, J. P., & Carlone, L. (2022). Kimera-multi: Robust, distributed, dense metric-semantic slam for multi-robot systems. IEEE Transactions on Robotics, 38(4). </a><br><br>
-						</div>
-		    </div>
-		    <div class="margin-right-block">
-            <!-- margin notes for reference block here -->
-		    </div>
-	</div>
-
-	<div class="content-margin-container" id="acknowledgements">
-		<div class="margin-left-block">
-		</div>
-		<div class="main-content-block">
-					<h1>Acknowledgments</h1>
-					<p>
-						We would like to thank Professor Jonathan How for his guidance throughout this project and for 
-						generously providing access to the resources that we utilized. Special thanks as well to Lucas Jia 
-						for assisting us with physical experiments and data collection.
-					</p>
-		</div>
-		<div class="margin-right-block">
-		</div>
-	</div>
-
-
-	<div class="content-margin-container" id="codebase">
-				<div class="margin-left-block">
-				</div>
-		    <div class="main-content-block">
-						<hr style="margin-bottom: 30px">
-						<h1>Codebase</h1>
-						<p>See <a href="https://github.com/AndyLi23/dynamic-object-detection" target="_blank">[dynamic-object-detection on Github]</a> for our final implementation code. 
-							Instructions for downloading our data and running the algorithm and evaluations are in the README. </p>
-						<p>The prototype code is also <a href="https://github.com/jrached/cv_project">[hosted on Github]</a>.</p>
-		    </div>
-		    <div class="margin-right-block">
-		    </div>
-	</div>
-
-	<div class="content-margin-container" id="appendix">
-		<div class="margin-left-block">
-		</div>
-		<div class="main-content-block">
-					<hr style="margin-bottom: 30px">
-					<h1>Appendix</h1>
-
-					<h4 id="app1">I. Using 3D Residuals </h4>
-
-					Because we have the depth data for both frame 1 and frame 2, in theory we can compute the full 3D movement 
-					of each pixel between frames.
-					Given RAFT flow \( [\delta u_{raft}, \delta v_{raft}] \) at pixel \( [u, v] \), we can compute the 3D residual as follows:
-					\[ p_2 = (T_{odom}^{cam})^{-1} \cdot T_{r2}^{r1} \cdot T_{odom}^{cam} \cdot [p_1^T \dots 1]^T + [u_{raft}, v_{raft}, 0]^T \]
-					\[ p_{2, raft} = d_2 K^{-1} [u + \delta u_{raft}, v + \delta v_{raft}, 1]^T \]
-					\[ \delta \approx p_{2, raft} - p_2 \]
-
-					where \( d_2 \) is the depth of pixel \( [u + \delta u_{raft}, v + \delta v_{raft}] \) in frame 2. This method works by 
-					assuming that RAFT correctly predicts pixel correspondences, in which case the 3D point corresponding to pixel 
-					\( [u + \delta u_{raft}, v + \delta v_{raft}] \) in frame 2 is the same as the 3D point corresponding to pixel \( [u, v] \) in frame 1.
-					Since \( p_2 \) accounts for the camera motion between frames but not the motion of the point itself, while RAFT accounts
-					for both, the difference is the approximate 3D motion of the point between frames.
-					<br><br>
-					Unfortunately, this method is not effective in practice. The RAFT flow is not accurate enough, 
-					and noise in the depth data is amplified by the projection into 3D. We ran our evaluation with the 3D 
-					residual method and found that it decreased the detection rate and dramatically increased the 
-					number of false positives, mostly patches of depth noise at larger depths.
-
-					<div class="caption">
-						<span>Table 4. Using 3D residuals</span>
-					</div>
-			
-					<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
-						<thead>
-							<tr>
-								<th>Method</th>
-								<th>\( N_{gt} \)</th>
-								<th>\( N_{det} \)</th>
-								<th>\( N \)</th>
-								<th>\( N_{corr} \)</th>
-								<th>\( det\% \)</th>
-								<th>\( fp\% \)</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><strong>Original</strong></td>
-								<td>1283</td>
-								<td>1088</td>
-								<td>1384</td>
-								<td>1114</td>
-								<td><strong>84.80%</strong></td>
-								<td><strong>19.51%</strong></td>
-							</tr>
-						</tbody>
-						<tbody>
-							<tr>
-								<td>3D residual</td>
-								<td>1283</td>
-								<td>939</td>
-								<td>35857</td>
-								<td>1400</td>
-								<td>73.19%</td>
-								<td>96.10%</td>
-							</tr>
-						</tbody>
-					</table>
-					<br>
-
-					<h4 id="app2">II. Max Depth Limits</h4>
-
-					We later compared performances at different maximum depth limits (all other parameters fixed).
-
-					<div class="caption">
-						<span>Table 5. Depth limit comparison</span>
-					</div>
-			
-
-					<table border="1" style="width:100%; text-align:center; border-collapse:collapse;">
-						<thead>
-							<tr>
-								<th>Depth Limit (m)</th>
-								<th>\( N_{gt} \)</th>
-								<th>\( N_{det} \)</th>
-								<th>\( N \)</th>
-								<th>\( N_{corr} \)</th>
-								<th>\( det\% \)</th>
-								<th>\( fp\% \)</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><strong>6.0</strong></td>
-								<td>1283</td>
-								<td>1088</td>
-								<td>1384</td>
-								<td>1114</td>
-								<td><strong>84.80%</strong></td>
-								<td>19.51%</td>
-							</tr>
-						</tbody>
-						<tbody>
-							<tr>
-								<td>7.5</td>
-								<td>1306</td>
-								<td>1087</td>
-								<td>1434</td>
-								<td>1113</td>
-								<td>83.23%</td>
-								<td>22.38%</td>
-							</tr>
-						</tbody>
-						<tbody>
-							<tr>
-								<td>10.0</td>
-								<td>1306</td>
-								<td>1049</td>
-								<td>1317</td>
-								<td>1075</td>
-								<td>80.32%</td>
-								<td>28.82%</td>
-							</tr>
-						</tbody>
-						<tbody>
-							<tr>
-								<td>15.0</td>
-								<td>1306</td>
-								<td>1042</td>
-								<td>1288</td>
-								<td>1068</td>
-								<td>79.79%</td>
-								<td><strong>17.08%</strong></td>
-							</tr>
-						</tbody>
-					</table>
-					<br>
-					As the maximum depth limit increases, the number of dynamic objects according to the ground truth 
-					does not significantly increase (possibly due to the depth-based velocity threshold gain). The 
-					detection rate decreases with increased depth limit.
-					<br><br>
-					We looked at the output videos and found that 15.0m decreased the false positive rate because it 
-					brought the walls into range of the depth data,
-					so odometry errors caused larger portions of the image to be masked, which were then pruned by the 
-					axis variance threshold. However, this is not a generalizable phenomenon. Therefore, we decided to 
-					continue using the 6.0m limit suggested by Intel, as any depth beyond that is guaranteed to be noisy. 
-					<br><br>
-
-					<h4>III. Smoothing and Quadcopter Experiments</h4>
-					While developing the prototype, we noticed rapid changes in pose produced high-frequency noise in the flow residuals, 
-					especially for quadcopter experiments where video was recorded on a highly dynamic vehicle. 
-					Our first instinct was to design a low-pass filter to smooth the outputs of our pipeline. Thus, our prototype returned a 
-					running average of the flow residuals parametrized by \( \alpha \) as 
-					\[ smoothFlow =  \alpha \cdot Flow + (1 - \alpha) \cdot prevFlow \]
-					As expected of a running average, smoothing mitigated some of the noise, but it also generated a delay between the estimated and ground truth
-					obstacle position. In fact, some smoothing granted a minor performance boost, but it quickly degraded as we over-smoothed the signal and 
-					created a larger gap between the estimate and the actual position. 
-					
-					<img src="./images/prototype/pos_error.png" width=1028px/>
-					<br>
-					<img src="./images/prototype/pos_std.png" width=1028px/>
-					<br>
-
-					This motivated us to pivot from the running average approach. The analysis above was performed on data collected onboard a x500 Holybro Quadcopter. 
-					Below are the flow masks of the flow from the videos recorded by the quadcopter with \(1 - \alpha \) = 0.2 smoothing (left) and  \(1 - \alpha \) = 0.8 smoothing
-					(right). The flashes of white are moments in which the RAFT flow and geometric flow disagree. The attentive viewer will notice that the flashing occurs when the 
-					quadcopter rolls. We found this to be a common trend: the signal-to-noise ratio decreases as the vehicle performs aggressive maneuvers, particularly during sharp 
-					changes in orientation. Notice that the video on the right exhibits less flashing, as it is heavily smoothed. This comes at the expense of a 
-					higher trajectory error as the smoothed estimate lags behind the unprocessed one. Although we developed an improved noise reduction strategy, the noise introduced 
-					during aggressive UAV flight requires advanced denoising techniques beyond the scope of this project, so we constrained the remainder of our experiments to ground vehicles. 
-					<br><br>
-					<div class="media-container">
-						<video class='my-video' loop autoplay muted controls style="width: 300px; max-width: 50%;">
-							<source src="./videos/prototype/flow_unsmoothed.mp4" type="video/mp4">
-						</video>
-						<video class='my-video' loop autoplay muted controls style="width: 300px; max-width: 50%;">
-							<source src="./videos/prototype/flow_smoothed.mp4" type="video/mp4">
-						</video>
-					</div>
-					<div class="caption">
-						<span>Figure 5. Left is light smoothing, right is heavy smoothing.
-						</span>
-					</div>
-					<br>
-					To estimate the obstacle position, we unproject the points in the mask into 3D space and obtain their centroid.
-					We use this centroid as our prediction of the obstacle's position. Clearly, a significant limitation of this approach is that it only works in scenes with at most one dynamic obstacle.  
-					Note that these are preliminary results, meant to convey the challenge of handling noisy visual signals during aggressive motion. 
-					Our final implementation computes the trajectory error by following a more sophisticated procedure outlined in the methods and experiment sections of this blog. 
-					<br><br>
-		</div>
-		<div class="margin-right-block">
-		</div>
-	</div>
 
 	</body>
 
 </html>
-
-

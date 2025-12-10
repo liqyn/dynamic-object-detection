@@ -1,0 +1,109 @@
+output: 'out/lewis_learned/train/01_lewis_learned'
+
+model:
+  # 3D Flows
+  use_raft_flows_3d: True
+  use_geometric_flows_3d: True
+  use_residual_flow_3d: True
+  
+  # 2D Flows
+  use_raft_flows_2d: True
+  use_geometric_flows_2d: True
+  use_residual_2d: True
+  
+  # Other Data
+  use_depth_data: True
+  use_image_data: True
+  use_last_frame: True
+
+gt:
+  gt_pose_data:
+    type: bag
+    path: ${GT_BAG_PATH}
+    topic: /HUSKY_LEWIS/world
+    time_tol: 0.1
+
+    T_odom_camera:
+      input_type: "matrix"
+      matrix: [ [0, 0, 1, 0],
+                [-1, 0, 0, 0],
+                [0, -1, 0, 0.2],
+                [0, 0, 0, 1] ]
+                
+  cache_dir: 'out/lewis_learned/train/cache/'
+  gt_vel_dt: 0.2
+  speed_threshold: 0.1
+
+  obstacle_robots_config:
+    SCOUT1:
+      pose_topic: /SCOUT1/world
+      dims: [0.5, 0.5, 0.5]
+      z_offset: 0.0
+    RR04:
+      pose_topic: /RR04/world
+      dims: [0.5, 0.5, 0.25]
+      z_offset: -0.1
+
+  sam_checkpoint: ${SAM}/sam_vit_l_0b3195.pth
+  sam_model_type: vit_l
+
+  inputs_output_dir: ${OUTPUT}/imgs/
+  gt_masks_output_dir: ${OUTPUT}/masks/
+
+device: cuda
+batch_size: 16
+
+original_fps: 30
+skip_frames: 2
+
+raft_model: raft-sintel
+
+raft:
+  path: ${RAFT}/core/
+  model: ${RAFT}/models/${RAFT_MODEL}.pth
+  iters: 12
+
+time:
+  relative: true
+  t0: 0
+  tf: 196
+  # t0: 30
+  # tf: 40
+
+img_data:
+  path: ${BAG_PATH}
+  topic: /camera/camera/color/image_raw/compressed
+  camera_info_topic: /camera/camera/color/camera_info
+  compressed: True
+  
+depth_data:
+  path: ${BAG_PATH}
+  topic: /camera/camera/aligned_depth_to_color/image_raw
+  camera_info_topic: /camera/camera/aligned_depth_to_color/camera_info
+  compressed: False
+
+  depth_scale: 1000.0
+  max_depth: 6.0
+
+  # d, sigmalColor, sigmalSpace. Delete or set to null to disable.
+  # bilateral_smooth_depth: [10, 100, 5] # in mm. (before scaling by 1000.0)
+
+
+pose_data:
+  type: bag
+  path: ${BAG_PATH}
+  topic: /lewis/dlio/odom_node/odom
+  time_tol: 2.0
+
+  T_odom_camera:
+    input_type: "string"
+    string: "T_FLURDF"
+
+viz:
+  viz_video: True
+  viz_dynamic_object_masks: True
+  vid_dims: [1280, 720]
+  viz_flag_names: ['image', 'depth', 'dynamic mask', 'raft flow', 'geometric flow', 'residual', 'orig dynamic mask']
+  # must be 2D: each entry i means viz_flag_names[i] will be in the video at the location of i in the grid
+  viz_flags: [[0, 1, 2], [3, 4, 5]]
+  viz_max_residual_magnitude: 0.5

@@ -4,7 +4,8 @@ from dynamic_object_detection.raft_wrapper import RaftWrapper
 from dynamic_object_detection.viz import OpticalFlowVisualizer
 from dynamic_object_detection.flow import GeometricOpticalFlow
 from dynamic_object_detection.tracker import DynamicObjectTracker
-from dynamic_object_detection.dod_util import copy_params_file, preprocess_depth, compute_relative_poses
+from dynamic_object_detection.dod_util import copy_params_file, preprocess_depth, compute_relative_poses, GTEvalTracker
+from dynamic_object_detection.learned.dataloader import GTExtractor
 import numpy as np
 from tqdm import tqdm
 import os
@@ -43,8 +44,6 @@ if __name__ == '__main__':
     depth_data = params.load_depth_data()
     print('pose, img, depth data loaded')
 
-    # print(len(cam_pose_data.positions))
-
     times = img_data.times[::params.skip_frames]
     N_frames = len(times)
     imgs = np.stack([img_data.img(t) for t in times], axis=0) # (N, H, W, 3)
@@ -62,6 +61,12 @@ if __name__ == '__main__':
         viz = OpticalFlowVisualizer(params.viz_params, f'{params.output}.mp4', effective_fps)
     gof_flow = GeometricOpticalFlow(depth_data.camera_params, device=params.device)
     tracker = DynamicObjectTracker(params.tracking_params, depth_data.camera_params, effective_fps)
+
+    # load gt
+    if params.run_gt_eval: 
+        gt_tracker = DynamicObjectTracker(params.tracking_params, depth_data.camera_params, effective_fps)
+        gt_eval_tracker = GTEvalTracker(params, times, imgs, img_data.camera_params, gt_tracker, params.device)
+
 
     for index in tqdm(range(1, N_frames, params.batch_size)):
 
@@ -109,6 +114,9 @@ if __name__ == '__main__':
 
         runtimes.append(time.time() - start_time)
 
+        if params.run_gt_eval:
+            gt_eval_tracker.eval_batch(index, dynamic_masks, batch_imgs_np, batch_depth_imgs_np, coords_3d, raft_coords_3d_1)
+
         if params.viz_params.viz_video:
             # print('writing video frames...')
             viz.write_batch_frames(
@@ -143,3 +151,6 @@ if __name__ == '__main__':
     with open(f'{params.output}.pkl', 'wb') as fout:
         pickle.dump(out, fout)
         print(f'output and info saved to {params.output}.pkl')
+
+    if params.run_gt_eval:
+        gt_eval_tracker.save_eval_results(f'{params.output}_gt_eval.json')

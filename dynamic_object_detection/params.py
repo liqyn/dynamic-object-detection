@@ -165,6 +165,73 @@ class VizParams:
     @classmethod
     def from_dict(cls, params_dict):
         return cls(**params_dict)
+    
+@dataclass
+class ModelParams:
+    use_raft_flows_3d: bool
+    use_geometric_flows_3d: bool
+    use_residual_flow_3d: bool
+    use_raft_flows_2d: bool
+    use_geometric_flows_2d: bool
+    use_residual_2d: bool
+    use_depth_data: bool
+    use_image_data: bool
+    use_last_frame: bool
+    unet_source_dir: str = None
+    checkpoint: str = None
+
+    def __post_init__(self):
+        if self.unet_source_dir is not None:
+            self.unet_source_dir = expandvars_recursive(self.unet_source_dir)
+        if self.checkpoint is not None:
+            self.checkpoint = expandvars_recursive(self.checkpoint)
+
+    @property
+    def num_channels(self):
+        channels = 0
+        if self.use_raft_flows_3d: channels += 3
+        if self.use_geometric_flows_3d: channels += 3
+        if self.use_residual_flow_3d: channels += 3
+
+        if self.use_raft_flows_2d: channels += 2
+        if self.use_geometric_flows_2d: channels += 2
+        if self.use_residual_2d: channels += 2
+
+        if self.use_depth_data: channels += 1 * (2 if self.use_last_frame else 1)
+        if self.use_image_data: channels += 3 * (2 if self.use_last_frame else 1)
+
+        return channels
+
+    @classmethod
+    def from_dict(cls, params_dict):
+        return cls(**params_dict)
+
+@dataclass
+class GTParams:
+    gt_pose_data: PoseDataParams
+    gt_vel_dt: float
+    cache_dir: str
+    speed_threshold: float
+    obstacle_robots_config: dict
+    sam_checkpoint: str = None
+    sam_model_type: str = None
+    inputs_output_dir: str = None
+    gt_masks_output_dir: str = None
+    gt_dist_threshold: float = 0.0
+
+    def __post_init__(self):
+        if self.sam_checkpoint is not None: self.sam_checkpoint = expandvars_recursive(self.sam_checkpoint)
+        if self.inputs_output_dir is not None: self.inputs_output_dir = expandvars_recursive(self.inputs_output_dir)
+        if self.gt_masks_output_dir is not None: self.gt_masks_output_dir = expandvars_recursive(self.gt_masks_output_dir)
+
+    def load_gt_camera_pose_data(self) -> PoseData:
+        extra_key_vals={'T_postmultiply': self.gt_pose_data.T_odom_camera, 'interp': True}
+        return self.gt_pose_data.load_camera_pose_data(extra_key_vals)
+
+    @classmethod
+    def from_dict(cls, params_dict):
+        params_dict['gt_pose_data'] = PoseDataParams.from_dict(params_dict['gt_pose_data'])
+        return cls(**params_dict)
 
 @dataclass
 class Params:
@@ -174,7 +241,6 @@ class Params:
     depth_data_params: DepthDataParams
     pose_data_params: PoseDataParams
     raft_params: RaftParams
-    tracking_params: TrackingParams
     viz_params: VizParams
     time_params: dict
     device: str
@@ -182,15 +248,13 @@ class Params:
     original_fps: int
     skip_frames: int
     output: str
-    kmd_env: str = None
-    robot: str = None
+    run_gt_eval: bool = False
     raft_model: str = None
+    tracking_params: TrackingParams = None
+    model_params: ModelParams = None
+    gt_params: GTParams = None
 
     def __post_init__(self):
-        if self.kmd_env is not None:
-            os.environ['KMD_ENV'] = self.kmd_env
-        if self.robot is not None:
-            os.environ['ROBOT'] = self.robot
         if self.raft_model is not None:
             os.environ['RAFT_MODEL'] = self.raft_model
 
@@ -204,17 +268,18 @@ class Params:
             depth_data_params=DepthDataParams.from_dict(params['depth_data']),
             pose_data_params=PoseDataParams.from_dict(params['pose_data']),
             raft_params=RaftParams.from_dict(params['raft']),
-            tracking_params=TrackingParams.from_dict(params['tracking']),
             viz_params=VizParams.from_dict(params['viz']),
             time_params=params['time'] if 'time' in params else None,
             device=params['device'] if 'device' in params else 'cuda',
-            batch_size=params['batch_size'] if 'batch_size' in params else 24,
+            batch_size=params['batch_size'] if 'batch_size' in params else 16,
             original_fps=params['original_fps'] if 'original_fps' in params else 30,
             skip_frames=params['skip_frames'] if 'skip_frames' in params else 1,
             output=params['output'] if 'output' in params else 'output',
-            kmd_env=params['kmd_env'] if 'kmd_env' in params else None,
-            robot=params['robot'] if 'robot' in params else None,
+            run_gt_eval=params['run_gt_eval'] if 'run_gt_eval' in params else False,
             raft_model=params['raft_model'] if 'raft_model' in params else None,
+            tracking_params=TrackingParams.from_dict(params['tracking']) if 'tracking' in params else None,
+            model_params=ModelParams.from_dict(params['model']) if 'model' in params else None,
+            gt_params=GTParams.from_dict(params['gt']) if 'gt' in params else None,
         )
     
     @cached_property

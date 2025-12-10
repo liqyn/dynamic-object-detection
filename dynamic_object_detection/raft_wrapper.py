@@ -1,6 +1,6 @@
 import sys
 import torch
-from params import RaftParams
+from dynamic_object_detection.params import RaftParams
 import torchvision.transforms as T
 
 class RaftWrapper:

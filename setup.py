@@ -8,6 +8,7 @@ setup(
         "numpy<2",
         "opencv-python",
         "torch>=2.8.0",
+        "git+https://github.com/facebookresearch/segment-anything.git"
         "torchvision",
         "matplotlib",
         "tensorboard",

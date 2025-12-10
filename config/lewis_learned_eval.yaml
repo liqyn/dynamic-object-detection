@@ -1,0 +1,148 @@
+output: 'out/lewis_learned'
+# model definition ------------------------------
+model:
+  # 3D Flows
+  use_raft_flows_3d: True
+  use_geometric_flows_3d: True
+  use_residual_flow_3d: True
+  
+  # 2D Flows
+  use_raft_flows_2d: True
+  use_geometric_flows_2d: True
+  use_residual_2d: True
+  
+  # Other Data
+  use_depth_data: True
+  use_image_data: True
+  use_last_frame: True
+
+  unet_source_dir: ${UNET}
+  checkpoint: ${UNET}/checkpoints/best_model.pth
+# ------------------------------
+
+
+# GT ------------------------------
+gt:
+  gt_pose_data:
+    type: bag
+    path: ${EVAL_GT_BAG_PATH}
+    topic: /HUSKY_LEWIS/world
+    time_tol: 0.1
+
+    T_odom_camera:
+      input_type: "matrix"
+      matrix: [ [0, 0, 1, 0],
+                [-1, 0, 0, 0],
+                [0, -1, 0, 0.2],
+                [0, 0, 0, 1] ]
+                
+  cache_dir: 'out/lewis_learned/gt_cache/'
+  gt_vel_dt: 0.2
+  speed_threshold: 0.1
+
+  obstacle_robots_config:
+    SCOUT1:
+      pose_topic: /SCOUT1/world
+      dims: [0.5, 0.5, 0.5]
+      z_offset: 0.0
+    RR04:
+      pose_topic: /RR04/world
+      dims: [0.5, 0.5, 0.25]
+      z_offset: -0.1
+
+  sam_checkpoint: ${SAM}/sam_vit_l_0b3195.pth
+  sam_model_type: vit_l
+
+  gt_dist_threshold: 0.5
+#------------------------------
+
+run_gt_eval: true
+
+device: cuda
+batch_size: 8
+
+original_fps: 30
+skip_frames: 2
+
+raft_model: raft-sintel
+
+raft:
+  path: ${RAFT}/core/
+  model: ${RAFT}/models/${RAFT_MODEL}.pth
+  iters: 12
+
+time:
+  relative: true
+  t0: 10
+  tf: 90
+  # t0: 90
+  # tf: 120
+  # t0: 15
+  # tf: 25
+
+img_data:
+  path: ${EVAL_BAG_PATH}
+  topic: /camera/camera/color/image_raw/compressed
+  camera_info_topic: /camera/camera/color/camera_info
+  compressed: True
+  
+depth_data:
+  path: ${EVAL_BAG_PATH}
+  topic: /camera/camera/aligned_depth_to_color/image_raw
+  camera_info_topic: /camera/camera/aligned_depth_to_color/camera_info
+  compressed: False
+
+  depth_scale: 1000.0
+  max_depth: 6.0
+
+  # d, sigmalColor, sigmalSpace. Delete or set to null to disable.
+  # bilateral_smooth_depth: [10, 100, 5] # in mm. (before scaling by 1000.0)
+
+
+pose_data:
+  type: bag
+  path: ${EVAL_BAG_PATH}
+  topic: /lewis/dlio/odom_node/odom
+  time_tol: 2.0
+
+  T_odom_camera:
+    input_type: "string"
+    string: "T_FLURDF"
+
+
+tracking:
+  # for 3D:
+  # if residual magnitude is greater than (min_vel_threshold + depth * vel_threshold_gain) * 1 / fps, 
+  # then that point is considered dynamic
+  # for 2D:
+  # approximate 3d residual magnitude = depth * K^-1 * [delta_u, delta_v, 0]
+  min_vel_threshold: 0.1
+  vel_threshold_gain: 0.0
+
+  # supports open, close, dilate, erode. second number is kernel size.
+  # post_processing: []
+  post_processing: [['open', 9], ['close', 9]]
+
+  # max axial std. deviation constraint for dynamic objects
+  min_3d_std_dev: 0.05
+  max_3d_std_dev: 1.0
+
+  # maximum chamfer distance for a projected dynamic object & a newly detected
+  # dynamic object to be considered for GNN association
+  max_merge_dist: 1.0
+
+  # minimum number of consecutive frames a dynamic object must be detected in 
+  # for it to be considered (1 by default)
+  # min_consecutive_frames: 2
+
+
+viz:
+  viz_video: True
+  viz_dynamic_object_masks: True
+  vid_dims: [1280, 960]
+  viz_flag_names: ['image', 'depth', 'dynamic mask', 'raft flow', 'geometric flow', 'residual', 'orig dynamic mask']
+  # must be 2D: each entry i means viz_flag_names[i] will be in the video at the location of i in the grid
+  # viz_flags: [[0, 1], [3, 4]]
+  # viz_flags: [[0, 1], [2, 5]]
+  viz_flags: [[0, 1], [2, 6]]
+  viz_max_residual_magnitude: 0.75
